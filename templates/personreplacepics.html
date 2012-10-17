@@ -1,0 +1,42 @@
+<a href="/person?id={{person.pid}}">{{person.name}}</a>
+<a href="{{person.wikipedia_link}}">Wiki</a>
+
+
+{% include "base.html" %}
+<form action="/swappics/" method="post">{% csrf_token %}
+<input type=hidden name="new" id="new" value="{{newpics}}"/>
+<input type=hidden name="old" id ="old" value="{{person.images}}"/>
+<input type=hidden name="pid" id ="pid" value="{{person.pid}}"/>
+<div>
+<ul class="thumbnails">
+<table><tr>
+{% for i in range %}
+<td>
+<input type="checkbox" name="old{{i}}" id="old{{i}}" />
+<label for="old{{i}}" onclick="document.getElemenstById.old{{i}}.checked = true;"><img src="/static//person/{{person.pid}}/{{i}}.jpg" alt="" width="180"/></label>
+</td>
+
+{% endfor %}
+</ul>
+<table>
+<ul class ="thumbnails">
+
+{% for i,j in picinfo.items %}
+
+
+<td><input type="checkbox" name="new{{i}}" onclick="document.getElemenstById.new{{i}}.checked = true;" id="{{j.link}}" /><img src ="/static//person/{{person.pid}}/tmp/{{i}}.jpg" title="{{j.title}}"></a>
+<li>{{j.domain}}</li>
+<li>{{j.width}}x{{j.height}}</li>
+</td>
+{% endfor %}
+
+</ul>
+
+</table>
+<style>
+#sub {width: 1000px;
+		height: 200px;}
+</style>
+<input type="submit" id="sub" value="Submit"/>
+
+</div>

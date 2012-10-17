@@ -1,0 +1,44 @@
+{% include "base.html" %}
+{% load stattools %}
+<table>
+{% if games %}
+	{% for i in games %}
+		{% with vgameid=i.vid %}
+		<tr>
+		<td><img src="/static//vgame/thumb/{{i.pid}}.jpg"/></td>
+		<td><a href ="videogame/?vid={{i.vid}}">{{i.title}}</a></td>
+
+		{% if game|get_item:vgameid %}
+		<td>Played</td>
+		{% else %}
+			<td id="played{{i.vid}}"><r class="btn" id="played">
+				<vid id="{{i.vid}}" type="hidden"/>
+				Played
+			</r></td>		
+		{% endif %}
+		{% endwith %}
+		</tr>
+	{% endfor %}
+{% endif %}
+</table>
+
+
+
+
+<script>
+
+	    $("#played").live('click', function(){
+	
+					vid = $(this).find('vid').attr('id');
+	               	$.post('/vgplayed', { 
+		                'csrfmiddlewaretoken': '{{ csrf_token }}',
+		                'vgame': vid,},
+						function(data) {
+							replace = "Played"
+							$('#played' + vid).replaceWith(replace)
+						
+   					     }, "json");
+
+	            });
+
+</script>

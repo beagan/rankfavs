@@ -1,0 +1,49 @@
+{% include "base.html" %}
+
+<img src ="/static//{{movie.imdb_id}}/1.jpg">
+<li>{{movie.title}}</li>
+<li><a href="http://www.imdb.com/title/tt{{movie.imdb_id}}">iMDb link</a></li>
+<li><a href="http://movies.netflix.com/Movie/{{movie.netflix_id}}">Netflix Link</a></li>
+<li>{{movie.year}}</li>
+<li>{{moviemat.wins}}</li>
+<li>{{moviemat.losses}}</li>
+<li>{{moviemat.elorating}}</li>
+<div class="span5">
+<table class="table table-striped">
+	<thead><td>Winners</td><td>Losers</td></thead>
+	<tbody>
+{% for i in matchups %}
+	<tr id="{{i.matchupid}}"> 	
+		<td>{{i.winner.title}}</td><td>{{i.loser.title}}</td>
+		<td><r class="btn" id="reverse">
+			<wid id="{{i.winner.mid}}" type="hidden"/>
+			<lid id="{{i.loser.mid}}" type="hidden"/>
+			<elo id="{{i.elo}}" type="hidden"/>
+			Reverse
+		</r></td>
+	</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<script>
+
+	    $("#reverse").live('click', function(){
+		
+					lid = $(this).find('lid').attr('id');
+					wid = $(this).find('wid').attr('id');
+					elo = $(this).find('elo').attr('id');
+	               	$.post('/reversemovievote', { 
+		                'csrfmiddlewaretoken': '{{ csrf_token }}',
+		                'winner': wid,
+						'loser': lid, 
+						'elo':elo},
+						function(data) {
+							replace = "<tr id=\"" + data.matchupid + "\"><td>" + data.winner.title + "</td><td>" + data.loser.title + "</td><td> <r class=\"btn\" id=\"reverse\"> <wid id=\"" + data.winner.mid + "\" type=\"hidden\"/> <lid id=\"" + data.loser.mid + "\" type=\"hidden\"/> <elo id=\"" + data.elo + "\" type=\"hidden\"/>Reverse</r></td></tr>"
+							$('#' + data.matchupid).replaceWith(replace)
+							
+   					     }, "json");
+
+	            });
+
+</script>

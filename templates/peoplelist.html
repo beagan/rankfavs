@@ -1,0 +1,44 @@
+{% include "base.html" %}
+{% load stattools %}
+<table>
+{% if people %}
+	{% for i in people %}
+		{% with pid=i.pid %}
+		<tr>
+		<td><img src="/static//person/thumb/{{i.pid}}.jpg"/></td>
+		<td><a href ="person/?pid={{i.pid}}">{{i.name}}</a></td>
+
+		{% if upeople|get_item:mid %}
+		<td>Watched</td>
+		{% else %}
+			<td id="seen{{i.pid}}"><r class="btn" id="watched">
+				<mid id="{{i.pid}}" type="hidden"/>
+				Watched
+			</r></td>		
+		{% endif %}
+		{% endwith %}
+		</tr>
+	{% endfor %}
+{% endif %}
+</table>
+
+
+
+
+<script>
+
+	    $("#watched").live('click', function(){
+	
+					mid = $(this).find('mid').attr('id');
+	               	$.post('/moviewatched', { 
+		                'csrfmiddlewaretoken': '{{ csrf_token }}',
+		                'movie': mid,},
+						function(data) {
+							replace = "Watched"
+							$('#seen' + mid).replaceWith(replace)
+						
+   					     }, "json");
+
+	            });
+
+</script>

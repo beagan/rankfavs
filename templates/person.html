@@ -1,0 +1,224 @@
+{% include "base.html" %}
+
+<script type="text/javascript" src="/static/jquery.tablesorter.js"></script>
+<script type="text/javascript" src="/static/jquery.flot.js"></script>
+<script type="text/javascript" src="/static/jquery.flot.pie.js"></script>
+
+<li>{{person.name}}</li>
+<li><a href ="/pickthumb?pid={{person.pid}}"><img src ='/static//person/thumb/{{person.pid}}.jpg' >
+{% if person.imdb_id %}<li><a href="http://www.imdb.com/name/nm{{person.imdb_id}}">iMDb link</a></li>{% endif %}
+{% if person.netflix_id %}<li><a href="http://movies.netflix.com/RoleDisplay?personid={{person.netflix_id}}">Netflix Link</a></li>{% endif %}
+{% if person.tvrage_id %}<li><a href="http://www.tvrage.com/person/id-{{person.tvrage_id}}/">TVrage Link</a></li>{% endif %}
+{% if person.chickipedia_id %}<li><a href="http://www.mademan.com/chickipedia/{{person.chickipedia_id}}/">Chikipedia Link</a></li>{% endif %}
+{% if person.twitter %}<li><a href="http://twitter.com/{{person.twitter}}/">Twitter Profile</a></li>{% endif %}
+{% if person.wikipedia_link %}<li><a href="http://en.wikipedia.org/wiki/{{person.wikipedia_link}}">Wikipedia Page</a></li>{% endif %}
+
+{% if personscore %}
+<li>{{person.gender}}</li>
+<li>{{personscore.wins}}</li>
+<li>{{personscore.losses}}</li>
+<li>{{personscore.elorating}}</li>
+<li>images {{person.images}}</li>
+{% endif %}
+<ul class="thumbnails">
+{% for i in range %}
+<a href="/editpics?pid={{person.pid}}"><img src ="/static/person/{{person.pid}}/{{i}}.jpg" width="150"></a>
+{% endfor %}
+
+</ul>
+
+
+<a href="/editpics?pid={{person.pid}}&newpics=True">Get New Pics</a>
+<form action="/editpics" method ="get">
+		<input type="text" name="query" class="search-query" placeholder="{{person.name}}">
+		<input type="hidden" name="pid" value ="{{person.pid}}">
+		<input type="hidden" name="newpics" value ="True">
+</form></li>
+
+
+<a href="/editperson?pid={{person.pid}}">Edit this person</a>
+
+<a href="/people?lockedin={{person.pid}}">Rank this person</a>
+<form action="/removeperson" method ="post">{% csrf_token %}
+	<input type="hidden" name="pid" value ="{{person.pid}}">
+	<input type="submit" value="Remove Person"></input>	
+</form>
+
+
+
+<div id="placeholder" style="width:85%;height:300px;horizontal-align:middle;"></div>
+
+    <div id="interactive" style="width:85%;height:300px;horizontal-align:middle;"></div>
+<div id="hover"></div>
+
+
+{% if matchups %}
+   <div>
+	<table class="table table-striped">
+		<thead><td>Winner</td><td>Loser</td></thead>
+		<tbody>
+	{% for i in matchups %}
+		<tr id="{{i.matchupid}}"> 	
+			<td>{{i.winner.name}}</td><td>{{i.loser.name}}</td><td>{{i.w_elo}}</td>
+			<td><r class="btn" id="reverse">
+				<wid id="{{i.winner.pid}}" type="hidden"/>
+				<lid id="{{i.loser.pid}}" type="hidden"/>
+				<elo id="{{i.w_elo}}" type="hidden"/>
+				Reverse
+			</r></td>
+		</tr>
+	{% endfor %}
+	</tbody>
+	</table>
+	</div>
+{% endif %}
+
+
+
+
+
+<script type="text/javascript">
+$(document).ready(function () {
+$('tr.parent').click(function(){
+$(this).siblings('.child-'+this.id).toggle();
+});
+$('tr.child').hide().children('td');
+$("tr").hover(function(){
+$(this).css("background-color","#B01514");
+$(this).css("color","white");
+},function(){
+$(this).css("background-color","white");
+$(this).css("color","black");
+});
+
+
+
+});
+</script>
+
+
+<script type="text/javascript">
+
+	$(function () {
+		var data = [];
+		var series = Math.floor(Math.random()*15)+1;
+
+		var dataurl = "teamPt?id=" + $(this).find("td").eq(1).html();
+
+		$("tr").click(function () {
+			var button = $(this);
+
+			var dataurl = "teamPt?id=" + $(this).find("td").eq(1).html();
+			// find the URL in the link right next to us
+			//var dataurl = button.siblings('a').attr('href');
+
+			// then fetch the data with jQuery
+			function onDataReceived(series) {
+			// extract the first coordinate pair so you can see that
+			// data is now an ordinary Javascript object
+				data = series
+				$.plot($("#interactive"), data,
+				{
+					series: {
+					pie: {
+					show: true
+					}
+			}
+			});
+			}
+
+		$.ajax({
+			url: dataurl,
+			method: 'GET',
+			dataType: 'json',
+			success: onDataReceived
+			});
+		});
+
+
+		});
+
+
+</script>
+
+
+
+
+
+
+
+<script type="text/javascript">
+	$(function () {
+		var options = {
+		lines: { show: true },
+		points: { show: false },
+		};
+		var data = [];
+		var placeholder = $("#placeholder");
+
+		$.plot(placeholder, data, options);
+
+
+			// fetch one series, adding to what we got
+			var alreadyFetched = {};
+
+		$("li").click(function () {
+			var button = $(this);
+
+			var dataurl = "/personelo?pid=" + {{person.pid}};
+			// find the URL in the link right next to us
+			//var dataurl = button.siblings('a').attr('href');
+
+			// then fetch the data with jQuery
+			function onDataReceived(series) {
+			// extract the first coordinate pair so you can see that
+			// data is now an ordinary Javascript object
+				var firstcoordinate = '(' + series.data[0][0] + ', ' + series.data[0][1] + ')';
+
+				button.siblings('span').text('Fetched ' + series.label + ', first point: ' + firstcoordinate);
+
+				// let's add it to our current data
+				if (!alreadyFetched[series.label]) {
+				alreadyFetched[series.label] = true;
+				data.push(series);
+				}
+
+				// and plot all we got
+				$.plot(placeholder, data, options);
+			}
+
+		$.ajax({
+			url: dataurl,
+			method: 'GET',
+			dataType: 'json',
+			success: onDataReceived
+		});
+	});
+
+
+
+});
+</script>
+
+
+	<script>
+
+		    $("#reverse").live('click', function(){
+		
+						lid = $(this).find('lid').attr('id');
+						wid = $(this).find('wid').attr('id');
+						elo = $(this).find('elo').attr('id');
+		               	$.post('/reversepersonvote', { 
+			                'csrfmiddlewaretoken': '{{ csrf_token }}',
+			                'winner': wid,
+							'loser': lid, 
+							'elo':elo},
+							function(data) {
+								replace = "<tr id=\"" + data.matchupid + "\"><td>" + data.winner.name + "</td><td>" + data.loser.name + "</td><td>" + data.elo +"</td> <td> <r class=\"btn\" id=\"reverse\"> <wid id=\"" + data.winner.pid + "\" type=\"hidden\"/> <lid id=\"" + data.loser.pid + "\" type=\"hidden\"/> <elo id=\"" + data.elo + "\" type=\"hidden\"/>Reverse</r></td></tr>	"
+								$('#' + data.matchupid).replaceWith(replace)
+							
+	   					     }, "json");
+
+		            });
+
+	</script>

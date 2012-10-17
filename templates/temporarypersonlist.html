@@ -1,0 +1,42 @@
+{% include "base.html" %}
+{% load stattools %}
+
+{% if people %}
+<form class="form-horizontal" action="/removetempperson" method ="post">{% csrf_token %}
+      <fieldset>
+	{% for i in people %}
+	<div class="control-group">
+		<div class="controls">
+			<label class="checkbox">
+				<input name="temp" value="{{i.temp_id}}" type="checkbox"><img src="/static//person/temp/thumb/{{i.temp_id}}.jpg"/><a href="addentity/?temp_id={{i.temp_id}}">{{i.name}}</a>
+			</label>
+		</div>
+	</div>
+		
+	{% endfor %}
+{% endif %}
+	<div class="control-group">
+		<div class="controls">
+			
+			<button type="submit" class="btn">Sign in</button>
+		</div>
+	</div>
+	</fieldset>
+</form>
+<script>
+
+	    $("#watched").live('click', function(){
+	
+					mid = $(this).find('mid').attr('id');
+	               	$.post('/moviewatched', { 
+		                'csrfmiddlewaretoken': '{{ csrf_token }}',
+		                'movie': mid,},
+						function(data) {
+							replace = "Watched"
+							$('#seen' + mid).replaceWith(replace)
+						
+   					     }, "json");
+
+	            });
+
+</script>

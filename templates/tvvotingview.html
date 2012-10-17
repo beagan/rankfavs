@@ -1,0 +1,187 @@
+
+
+
+<style>
+.poster {
+max-height:300px;
+max-width:450px;
+}
+</style>
+
+
+
+
+
+<div id="view">
+	
+
+	<div style="margin-top: 18px;" class="btn-toolbar">
+			<div class="btn-group">
+				<a class="btn" id="gametype" href="#">{% if gametype %}{{gametype}}{% else %}Game Type{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/tvshows/?gametype=randoms" id="filter">Two Randoms</a>
+					<a href="/tvshows/?gametype=winner" id="filter">Winner Stays</a>
+					<a href="/tvshows/?gametype=loser" id="filter">Loser Stays</a>
+					<a href="/tvshows/?gametype=david" id="filter">David vs. Goliath</a>
+					<a href="/tvshows/?gametype=AlwaysNew" id="filter">Always New Movie</a>
+				</ul>
+			</div>
+			
+			
+			<div class="btn-group">
+				<a class="btn" id="cat" href="#">{% if cat %}{{cat}}{% else %}Category{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/tvshows/?cat=All Categories" id="filter">All Categories</a>
+			{% for i in categories %}
+					<a href="/tvshows/?cat={{i.gid}}" id="filter">{{i.category}}</a>
+			{% endfor %}
+				</ul>
+			</div>
+			
+			<div class="btn-group">
+				<a class="btn" id="gametype" href="#">{% if list %}{{list}}{% else %}Lists{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/tvshows/?list=None" id="filter">All</a>
+					<a href="/tvshows/?list=top25" id="filter">Your Top 25</a>
+					<a href="/tvshows/?list=top250" id="filter">Your Top 250</a>
+					<a href="/tvshows/?list=undefeated" id="filter">Undefeated</a>
+					<a href="/tvshows/?list=newbie" id="filter">Newbie</a>
+					{% for i in lists %}
+							<a href="/tvshows/?list={{i.list}}" id="filter">{{i.list}}</a>
+					{% endfor %}		
+				</ul>
+			</div>
+			<div class="btn-group">
+				<a class="btn" id="Watched" href="#">{% if watched %}{{watched}}{% else %}Watched or Not{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/tvshows/?watched=True" id="filter">TV Shows marked watched</a>
+					<a href="/tvshows/?watched	=False" id="filter">All TV Shows</a>
+				</ul>
+			</div>
+			<div class="btn-group">
+				<a class="btn" id="gametype" href="#">{% if rematch %}{{rematch}}{% else %}Allow Rematches{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/tvshows/?rematch=Yes" id="filter">Yes</a>
+					<a href="/tvshows/?rematch=No" id="filter">No</a>
+				</ul>
+			</div>
+			
+			
+	</div>
+	
+
+{% if filters.lockedin %}
+	{{filters.lockedin}}<a href="/tvshow/?remove=lockedin" id="filter">X</a>
+{% endif %}
+{% if filters.gametype %}
+	{{filters.gametype}}<a href="/tvshow/?remove=gametype" id="filter">X</a>
+{% endif %}
+{% if filters.cat %}
+	{{filters.cat}}<a href="/tvshow/?remove=cat" id="filter">X</a>
+{% endif %}
+{% if filters.list %}
+	{{filters.list}}<a href="/tvshow/?remove=list" id="filter">X</a>
+{% endif %}
+{% if filters.watched %}
+	{{filters.watched}}<a href="/tvshow/?remove=watched" id="filter">X</a>
+{% endif %}
+{% if filters.rematch %}
+	{{filters.rematch}}<a href="/tvshow/?remove=rematch" id="filter">X</a>
+{% endif %}
+	
+<a href="/tvshow/?clearfilters=True" id="filter">Clear All</a>
+
+<div id="persons" class ="row">
+	
+{% if tvshow1 %}
+<div class="span3">
+<div id="tvshow">
+	<img class="poster" src ="/static//tvshow/{{tvshow1.tid}}/{{tvshow1ran}}.jpg">
+
+	<wid id="{{tvshow1.tid}}" type="hidden" name="tvshow1id"/><br>
+	<lid id="{{tvshow2.tid}}" type="hidden" name="tvshow2id"/><br>
+</div>
+<li><a href ="tvshow/?tid={{tvshow1.tid}}">{{tvshow1.title}}</a></li> 
+<li>{{tvshow1mat.elorating}}</li>
+<li>{{tvshow1mat.numratings}}</li>
+<li>{{tvshow1mat.watched}}</li>
+<li><a id="notwatched" href="/tvshows/?notwatched={{tvshow1.tid}}&othertvshow={{tvshow2.tid}}">Never Watched</a>
+</div>
+
+<div class = "span3">
+<div id="tvshow" class = "span3">
+	<img class="poster" src ="/static//tvshow/{{tvshow2.tid}}/{{tvshow2ran}}.jpg">
+	<wid id="{{tvshow2.tid}}" type="hidden" name="tvshow2id"><br>
+	<lid id="{{tvshow1.tid}}" type="hidden" name="tvshow1id"/><br>
+</div>	
+<li><a href ="tvshow/?tid={{tvshow2.tid}}">{{tvshow2.title}}</a></li> 
+<li>{{tvshow2mat.elorating}}</li>
+<li>{{tvshow2mat.numratings}}</li>
+<li>{{tvshow2mat.watched}}</li>
+<li><a id ="notwatched" href="/tvshows/?notwatched={{tvshow2.tid}}&othertvshow={{tvshow1.tid}}">Never Watched</a>
+</div>
+<div id ="prevvote">
+{% if ranks %}
+<table>
+	<tr>
+		<td>
+		Loser
+		</td>
+		<td>
+		{{ranks.oldloser}}
+		</td>
+		<td>
+		{{ranks.newloser}}
+		</td>
+		<td>
+		{{ranks.loserchange}}
+		</td>
+	</tr>
+	<tr>
+		<td>
+		Winner
+		</td>
+		<td>
+		{{ranks.oldwinner}}
+		</td>
+		<td>
+		{{ranks.newwinner}}
+		</td>
+		<td>
+		{{ranks.winnerchange}}
+		</td>
+{% endif %}
+</div>
+
+<div class = "span3">
+{% else %}
+{% endif %}
+
+{% if top20 %}
+	{% for i in top20 %}
+		<li>{{forloop.counter}}. <img src="/static//tvshow/thumb/{{i.tid.tid}}.jpg"/><a href ="tvshow/?id={{i.tid.tid}}">{{i.tid.title}}</a>{{i.elorating}}  {{i.rank}}</li>
+	{% endfor %}
+{% endif %}
+</div>
+</div>
+

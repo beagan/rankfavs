@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>Question Answers</title>
+    <style type="text/css">
+    	H1 {font-size: 20px; font-family: Helvetica, Verdana, Arial, sans-serif;background:#eee8a2; border: 1px solid #aaa; text-align: center;}
+    	H2 {font-size: 18px; font-family: Helvetica, Verdana, Arial, sans-serif;background:#eee8a2; border: 1px solid #aaa; text-align: center;}
+    	H3 {font-size: 16px; font-variant:small-caps;font-family: Helvetica, Verdana, Arial, sans-serif;background:#c0c0c0; border: 1px solid #aaa;
+    	text-align: left;}
+
+	body {font-size: 12px; font-family: Verdana , sans-serif, Arial;}
+    	a:visited,a:link { font-size:14px; font-variant:small-caps; color: #000080; text-decoration:underline; text-transform:capitalize;}
+    </style>
+  </head>
+  <body>
+    <a href="./">Home</a>  <a href="./listquestion">Questions</a>  <a href="./submitquestion">Submit Question</a>  <a href="./badges">Badges</a>  <a href="./profile">Profile</a>  <a href="./logout">Logout {{user.username}}</a>
+       <h2>Submit your user information</h2>
+       <ul></ul><form method="POST" action="./submitregistration">{% csrf_token %}
+       		Input user name:<input type="text" name="user"/><br/>
+       		Input email:<input type="text" name="email"/><br/>
+			Password: <input type="text" name="password"/><br/>
+			Hometown: <input type="text" name="hometown"/><br/>
+		<input type="submit" value="Submit Register"></input>
+       </form></ul>
+       <ul>
+       <li><a href="./questionform">Submit Question</a></li>
+       <li><a href="./listquestion">List All Questions</a></li>
+       </ul>
+</body>
+</html>
+

@@ -1,0 +1,12 @@
+<table>
+{% if results %}
+	{% for i in results %}
+		<label class="checkbox">
+		<input type="checkbox" value="{{i.pid}}">
+		<img width=40 src="/static//person/thumb/{{i.pid}}.jpg"/>
+		<a href ="person/?pid={{i.pid}}">{{i.name}}</a>
+		</label>
+		
+	{% endfor %}
+{% endif %}
+</table>

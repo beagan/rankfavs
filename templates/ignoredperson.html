@@ -1,0 +1,27 @@
+{% include "base.html" %}
+<table>
+{% if ignored %}
+	{% for i in ignored %}
+		<tr>
+		<td><img src="/static//person/thumb/{{i.pid.pid}}.jpg"/ height="50"></td>
+		<td><a href ="person/?id={{i.pid.pid}}">{{i.pid.name}}</a></td>
+		<td class="btn" id="reverse">
+			<a id="{{i.pid.pid}}" type="hidden"/>
+			Remove
+		</td>
+		</tr>
+	{% endfor %}
+{% endif %}
+</table>
+
+
+<script>
+$("a neveruse").live('click', function(){
+	
+	$.get($(this).attr('href'), {},
+		function(data){
+			$("#view").html(data);		
+	});
+	return false;
+});
+</script>

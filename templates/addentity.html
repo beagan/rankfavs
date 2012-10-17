@@ -1,0 +1,110 @@
+{% include "base.html" %}
+
+
+
+<form class="form-horizontal" action="/entityhandler" method ="post">{% csrf_token %}
+	<div class="control-group">
+		<label class="control-label" for="type">Entity Type</label>
+		<div class="controls">
+			<select name="type">
+			<option>Person</option>
+			<option>Movie</option>
+			<option>Videogame</option>
+			</select>
+		</div>
+	</div>
+	
+	<div class="control-group">
+		<label class="control-label" for="name">Name</label>
+		<div class="controls">
+			<input type="text" name ="name" id="name" placeholder="Name">
+					<tt id="search" class="btn" >Search</tt>
+					<div id="results">
+					</div>
+			
+		</div>
+	</div>	
+	
+	
+	
+	<div class="control-group">
+		<label class="control-label" for="input01">Gender</label>
+		<div class="controls">
+	        <select name="Gender">
+				<option{% ifequal person.gender 'Female' %} selected="selected"{% endifequal %}>Female</option>
+				<option{% ifequal person.gender 'Male' %} selected="selected"{% endifequal %}>Male</option>
+			</select><br>
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label" for="input01">iMDB ID</label>
+		<div class="controls">
+			<input type="text" name="imdb_id" class="search-query" value = "{{person.imdb_id}}"/>
+			</div>
+		</div>
+	<div class="control-group">
+		<label class="control-label" for="input01">Netflix ID</label>
+		<div class="controls">
+			<input type="text" name="netflix_id" class="search-query" value = "{{person.netflix_id}}"/>
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label" for="input01">TVRage ID</label>
+		<div class="controls">
+			<input type="text" name="tvrage_id" class="search-query" value = "{{person.tvrage_id}}"/>
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label" for="input01">Chickipedia ID</label>
+		<div class="controls">
+			<input type="text" name="chickipedia_id" class="search-query" value = "{{person.chickipedia_id}}"/>
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label" for="input01">Twitter Handle</label>
+		<div class="controls">
+			<input type="text" name="twitter" class="search-query" value = "{{person.twitter}}"/>
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label" for="input01">Wikipedia Link</label>
+		<div class="controls">
+			<input type="text" name="wikipedia_link" class="search-query" value = "{{person.wikipedia_link}}"/>
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label" for="input01">Date of Birth</label>
+		<div class="controls">
+			<input type="text" name="dob" class="jdpicker" value="1000/01/01{{dob}}" />
+		</div>
+	</div>
+	
+	
+	<div class="control-group">
+		<div class="controls">
+
+			<button type="submit" class="btn">Save</button>
+		</div>
+	</div>
+	
+</form>
+
+
+<script>
+	    
+		$("#search").live('click', function(){
+					search = "j"
+					
+					search = $("#name").val();
+
+					$.post('/ajaxsearch', { 
+		                'csrfmiddlewaretoken': '{{ csrf_token }}',
+		                'search': search,},
+						function(data) {
+							$("#results").html(data);
+						
+   					     });
+
+	            });
+
+</script>

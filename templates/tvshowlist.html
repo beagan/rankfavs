@@ -1,0 +1,47 @@
+{% include "base.html" %}
+{% load stattools %}
+<table>
+{% if tvshows %}
+	{% for i in tvshows %}
+		{% with tvshowid=i.tid %}
+		<tr>
+		<td><img src="/static//tvshow/thumb/{{i.tid}}.jpg"/></td>
+		<td><a href ="/tvshow/?vid={{i.tid}}">{{i.title}}</a></td>
+		
+		{% if tvshow|get_item:tvshowid %}
+		<td>Watched</td>
+		{% else %}
+			<td id="watched{{i.tid}}"><r class="btn" id="watched">
+				<tid id="{{i.tid}}" type="hidden"/>
+				Watched?
+			</r></td>		
+		{% endif %}
+		{% endwith %}
+		</tr>
+	{% endfor %}
+{% endif %}
+</table>
+
+{% if prevpage %}<a href="/tvshowlist/?page={{prevpage}}">Previous Page</a>{% endif %}
+
+{% if nextpage %}<a href="/tvshowlist/?page={{nextpage}}">Next Page</a>{% endif %}
+
+
+
+<script>
+
+	    $("#watched").live('click', function(){
+	
+					tid = $(this).find('tid').attr('id');
+	               	$.post('/tvwatched', { 
+		                'csrfmiddlewaretoken': '{{ csrf_token }}',
+		                'tvshow': tid,},
+						function(data) {
+							replace = "Watched"
+							$('#watched' + tid).replaceWith(replace)
+						
+   					     }, "json");
+
+	            });
+
+</script>

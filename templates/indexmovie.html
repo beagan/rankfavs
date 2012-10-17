@@ -1,0 +1,112 @@
+{% include "base.html" %}
+
+
+
+
+{% include "movievotingview.html" %}
+
+
+
+<script>
+		$("a neveruse").live('click', function(){
+			
+			$.get($(this).attr('href'), {},
+				function(data){
+					$("#view").html(data);		
+			});
+			return false;
+		});
+		
+		
+		
+		$("yr").live('click', function(){
+			year = $(this).attr('id');
+			gametype = $("#gametype").text();
+			$.get('/personmatch', {
+				'year':year,
+				'gametype':gametype,
+				'genre':'Action',
+				'actor':''},
+				function(data){
+					$("#view").html(data);
+				
+				
+			});
+		});
+		
+		$("game").live('click', function(){
+			year = $("#decadeselect").text();
+			gametype = $(this).attr('id');
+			$.get('/personmatch', {
+				'year':year,
+				'gametype':gametype,
+				'genre':'Action',
+				'actor':''},
+				function(data){
+					$("#view").html(data);
+				
+				
+			});
+		});
+		
+		$("a#filter").live('click', function(){
+			gender = 
+			$.get($(this).attr('href'), {},
+				function(data){
+					$("#view").html(data);		
+			});
+			return false;
+		});
+		
+		
+		
+		$("a#neveruse").live('click', function(){
+			
+			$.get($(this).attr('href'), {},
+				function(data){
+					$("#view").html(data);		
+			});
+			return false;
+		});
+		
+		
+		
+	    $("#movie").live('click', function(){
+					lid = $(this).find('lid').attr('id');
+					wid = $(this).find('wid').attr('id');
+					year = $("#decadeselect").text();
+	               	$.post('/moviematch', { 
+		                'csrfmiddlewaretoken': '{{ csrf_token }}',
+		                'winner': wid,
+						'loser': lid,
+						'year': year
+						},
+						function(data) {
+					     $("#view").html(data);
+   					     
+					   });
+
+	            });
+	    $("#person").live('click', function(){
+					lid = $(this).find('lid').attr('id');
+					wid = $(this).find('wid').attr('id');
+					year = $("#decadeselect").text();
+					gametype = $("#gametype").text();
+	               	$.post('/personmatch', { 
+		                'csrfmiddlewaretoken': '{{ csrf_token }}',
+		                'winner': wid,
+						'loser': lid,
+						},
+						function(data) {
+					     $("#view").html(data);
+   					     
+					   });
+
+	            });	
+
+
+
+
+</script>
+</body>
+</html>

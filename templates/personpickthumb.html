@@ -1,0 +1,14 @@
+{% include "base.html" %}
+<form action="/replacethumb/" method="post">{% csrf_token %}
+
+<input type=hidden name="pid" id ="pid" value="{{person.pid}}"/>
+<div>
+<ul class="thumbnails">
+{% for i in range %}
+<input type="radio" name="pic_id" value="{{i}}" /><img src ="/static//person/{{person.pid}}/{{i}}.jpg" width="180"></a>
+{% endfor %}
+</ul>
+
+<input type="submit" value="Submit" />
+
+</div>

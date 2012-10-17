@@ -1,0 +1,14 @@
+{% include "base.html" %}
+
+<table>
+{% if persons %}
+	{% for i in persons %}
+		<tr>
+		<td>#{{i.rank}}   {{i.elorating}}</td>
+		
+		<td><a href ="person/?pid={{i.pid.pid}}">{{i.pid.name}}</a></td>
+		</tr>
+	{% endfor %}
+{% endif %}
+</table>
+

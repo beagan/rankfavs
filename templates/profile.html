@@ -1,0 +1,77 @@
+{% include "base.html" %}
+
+<table>
+	<tr>
+		<td>Name</td>
+		<td>{{user}}</td>
+	</tr>
+	<tr>
+		<td>Ratings</td>
+		<td>{{ request.user.get_profile.global_ratings }}</td>
+	</tr>
+		<td>Movie Ratings</td>
+		<td>{{ request.user.get_profile.movie_ratings }}</td>
+	<tr>
+		<td>Person Ratings</td>
+		<td>{{ request.user.get_profile.person_ratings }}</td>
+	</tr>	
+</table>
+<table>
+	<tr><td>
+{% if top10people %}
+	{% for i in top10people %}
+		<li>{{forloop.counter}}. <irmg src="/static//person/thumb/{{i.pid.pid}}.jpg"/><a href ="person/?pid={{i.pid.pid}}">{{i.pid.name}}</a></li>
+	{% endfor %}
+{% endif %}
+</td><td>
+{% if top10movies %}
+	{% for i in top10movies %}
+		<li>{{forloop.counter}}<a href ="movie/?id={{i.mid.mid}}">{{i.mid.title}}</a></li>
+	{% endfor %}
+{% endif %}
+</td></tr>
+</table>
+
+
+<form id="imdb" method="POST">{% csrf_token %}
+   		Imdb ratings link:<input type="text" name="imdblink"/><br/>
+	<input type="submit" name = "imdbratings" value="imdbratings"></input>
+   </form>
+
+<script>
+
+	$('#imdb').submit(function() {
+  		//alert('Handler for .submit() called.');
+		   $.ajax({
+		       async: true,
+		       type: 'POST',
+		       url: '/imdbusercsv',
+		       data: $("#imdb").serialize(),
+		       success: function(msg) {
+		           alert( "Data Saved: " + msg );
+		       }
+		   });
+  		return false;
+	});
+
+
+	   
+	
+	$("#person").live('click', function(){
+				lid = $(this).find('lid').attr('id');
+				wid = $(this).find('wid').attr('id');
+				year = $("#decadeselect").text();
+				gametype = $("#gametype").text();
+               	$.post('/personmatch', { 
+	                'csrfmiddlewaretoken': '{{ csrf_token }}',
+	                'winner': wid,
+					'loser': lid,
+					},
+					function(data) {
+				     $("#view").html(data);
+				     
+				   });
+
+            });
+	
+</script>

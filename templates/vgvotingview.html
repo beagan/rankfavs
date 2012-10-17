@@ -1,0 +1,164 @@
+
+
+
+<style>
+.poster {
+max-height:300px;
+max-width:450px;
+}
+</style>
+
+
+
+
+
+<div id="view">
+	
+
+	<div style="margin-top: 18px;" class="btn-toolbar">
+			<div class="btn-group">
+				<a class="btn" id="gametype" href="#">{% if gametype %}{{gametype}}{% else %}Game Type{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/videogames/?gametype=randoms" id="filter">Two Randoms</a>
+					<a href="/videogames/?gametype=winner" id="filter">Winner Stays</a>
+					<a href="/videogames/?gametype=loser" id="filter">Loser Stays</a>
+					<a href="/videogames/?gametype=david" id="filter">David vs. Goliath</a>
+					<a href="/videogames/?gametype=AlwaysNew" id="filter">Always New Movie</a>
+				</ul>
+			</div>
+			
+			
+			<div class="btn-group">
+				<a class="btn" id="cat" href="#">{% if cat %}{{cat}}{% else %}Category{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/videogames/?cat=All Categories" id="filter">All Categories</a>
+			{% for i in categories %}
+					<a href="/videogames/?cat={{i.gid}}" id="filter">{{i.category}}</a>
+			{% endfor %}
+				</ul>
+			</div>
+			
+			<div class="btn-group">
+				<a class="btn" id="gametype" href="#">{% if list %}{{list}}{% else %}Lists{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/videogames/?list=None" id="filter">All</a>
+					<a href="/videogames/?list=top25" id="filter">Your Top 25</a>
+					<a href="/videogames/?list=top250" id="filter">Your Top 250</a>
+					<a href="/videogames/?list=undefeated" id="filter">Undefeated</a>
+					<a href="/videogames/?list=newbie" id="filter">Newbie</a>
+					{% for i in lists %}
+							<a href="/videogames/?list={{i.list}}" id="filter">{{i.list}}</a>
+					{% endfor %}		
+				</ul>
+			</div>
+			<div class="btn-group">
+				<a class="btn" id="played" href="#">{% if played %}{{played}}{% else %}Played or Not{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/videogames/?played=True" id="filter">Games marked played</a>
+					<a href="/videogames/?played=False" id="filter">All Games</a>
+				</ul>
+			</div>
+			<div class="btn-group">
+				<a class="btn" id="gametype" href="#">{% if rematch %}{{rematch}}{% else %}Allow Rematches{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/videogames/?rematch=Yes" id="filter">Yes</a>
+					<a href="/videogames/?rematch=No" id="filter">No</a>
+				</ul>
+			</div>
+			
+			
+	</div>
+<div id="persons" class ="row">
+	
+{% if videogame1 %}
+<div class="span3">
+<div id="vgame">
+	<img class="poster" src ="/static//vgame/{{videogame1.vid}}/{{videogame1ran}}.jpg">
+
+	<wid id="{{videogame1.vid}}" type="hidden" name="videogame1id"/><br>
+	<lid id="{{videogame2.vid}}" type="hidden" name="videogame2id"/><br>
+</div>
+<li><a href ="videogame/?id={{videogame1.vid}}">{{videogame1.title}}</a></li> 
+<li>{{videogame1mat.elorating}}</li>
+<li>{{videogame1mat.numratings}}</li>
+<li>{{videogame1mat.neveruse}}</li>
+<li><a id="neveruse" href="/neveruseperson?neveruse={{videogame1.vid}}&otherperson={{videogame2.vid}}">Never Use</a>
+</div>
+
+<div class = "span3">
+<div id="vgame" class = "span3">
+	<img class="poster" src ="/static//vgame/{{videogame2.vid}}/{{videogame2ran}}.jpg">
+	<wid id="{{videogame2.vid}}" type="hidden" name="videogame2id"><br>
+	<lid id="{{videogame1.vid}}" type="hidden" name="videogame1id"/><br>
+</div>	
+<li><a href ="videogame/?id={{videogame2.vid}}">{{videogame2.title}}</a></li> 
+<li>{{videogame2mat.elorating}}</li>
+<li>{{videogame2mat.numratings}}</li>
+<li>{{videogame2mat.neveruse}}</li>
+<li><a id ="neveruse" href="/neveruseperson?neveruse={{videogame2.vid}}&otherperson={{videogame1.vid}}">Never Use</a>
+</div>
+<div id ="prevvote">
+{% if ranks %}
+<table>
+	<tr>
+		<td>
+		Loser
+		</td>
+		<td>
+		{{ranks.oldloser}}
+		</td>
+		<td>
+		{{ranks.newloser}}
+		</td>
+		<td>
+		{{ranks.loserchange}}
+		</td>
+	</tr>
+	<tr>
+		<td>
+		Winner
+		</td>
+		<td>
+		{{ranks.oldwinner}}
+		</td>
+		<td>
+		{{ranks.newwinner}}
+		</td>
+		<td>
+		{{ranks.winnerchange}}
+		</td>
+{% endif %}
+</div>
+
+<div class = "span3">
+{% else %}
+{% endif %}
+
+{% if top20 %}
+	{% for i in top20 %}
+		<li>{{forloop.counter}}. <img src="/static//vgame/thumb/{{i.vid.vid}}.jpg"/><a href ="videogame/?id={{i.vid.vid}}">{{i.vid.title}}</a>{{i.elorating}}  {{i.rank}}</li>
+	{% endfor %}
+{% endif %}
+</div>
+</div>
+

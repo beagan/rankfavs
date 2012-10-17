@@ -1,0 +1,151 @@
+
+<style>
+.poster {
+max-height:300px;
+max-width:450px;
+}
+</style>
+
+
+
+
+
+<div id="view">
+	
+	
+	<div style="margin-top: 18px;" class="btn-toolbar">
+			<div class="btn-group">
+				<a class="btn" id="decadeselect" href="#">{% if year %}{{year}}{% else %}Decade{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/movies/?decade=2010" id="filter">2010s</a>
+					<a href="/movies/?decade=2000" id="filter">2000s</a>
+					<a href="/movies/?decade=1990" id="filter">1990s</a>
+					<a href="/movies/?decade=1980" id="filter">1980s</a>
+					<a href="/movies/?decade=1970" id="filter">1970s</a>
+					<a href="/movies/?decade=1960" id="filter">1960s</a>
+					<a href="/movies/?decade=1950" id="filter">1950s</a>
+				</ul>
+			</div>
+			
+			<!-- need to add check to see if imported imdb ratings-->
+			<div class="btn-group">
+				<a class="btn" id="imdbrating" href="#">Imdb Rating</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/movies/?imdbr=10" id="filter">Perfect 10</a>
+					<a href="/movies/?imdbr=8" id="filter">Greater than 8</a>
+					<a href="/movies/?imdbr=6" id="filter">Greater than 6</a>
+					<a href="/movies/?imdbr=4" id="filter">Greater than 4</a>
+					<a href="/movies/?imdbr=2" id="filter">Greater than 2</a>					
+				</ul>
+			</div>
+
+			<div class="btn-group">
+				<a class="btn" id="gametype" href="#">Game Type</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/movies/?gametype=randoms" id="filter">Two Randoms</a>
+					<a href="/movies/?gametype=winner" id="filter">Winner Stays</a>
+					<a href="/movies/?gametype=loser" id="filter">Loser Stays</a>
+					<a href="/movies/?gametype=david" id="filter">David vs. Goliath</a>
+					<a href="/movies/?gametype=AlwaysNew" id="filter">Always New Movie</a>
+				</ul>
+			</div>
+			<div class="btn-group">
+				<a class="btn" id="gametype" href="#">{% if list %}{{list}}{% else %}Lists{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/movies/?list=None" id="filter">All</a>
+					<a href="/movies/?list=top25" id="filter">Your Top 25</a>
+					<a href="/movies/?list=top250" id="filter">Your Top 250</a>
+					<a href="/movies/?list=undefeated" id="filter">Undefeated</a>
+					<a href="/movies/?list=newbie" id="filter">Newbie</a>
+					<a href="/movies/?list=notedit" id="filter">Not Image Edit</a>
+					{% for i in lists %}
+							<a href="/people/?list={{i.list}}" id="filter">{{i.list}}</a>
+					{% endfor %}		
+				</ul>
+			</div>
+			
+			<div class="btn-group">
+				<a class="btn" id="gametype" href="#">{% if rematch %}{{rematch}}{% else %}Allow Rematches{% endif %}</a>
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<span class="caret"></span>
+				</a>
+				<ul class="dropdown-menu">
+			<!-- dropdown menu links -->
+					<a href="/movies/?rematch=Yes" id="filter">Yes</a>
+					<a href="/movies/?rematch=No" id="filter">No</a>
+				</ul>
+			</div>
+
+	</div>
+	
+	
+	{% if filters.m_lockedin %}
+		{{filters.m_lockedin}}<a href="/movies/?remove=m_lockedin" id="filter">X</a>
+	{% endif %}
+	{% if filters.decade %}
+		{{filters.decade}}<a href="/movies/?remove=decade" id="filter">X</a>
+	{% endif %}
+	{% if filters.gametype %}
+		{{filters.gametype}}<a href="/movies/?remove=gametype" id="filter">X</a>
+	{% endif %}
+	{% if filters.imdbr %}
+		{{filters.imdbr}}<a href="/movies/?remove=imdbr" id="filter">X</a>
+	{% endif %}
+	{% if filters.list %}
+		{{filters.list}}<a href="/movies/?remove=list" id="filter">X</a>
+	{% endif %}
+	{% if filters.rematch %}
+		{{filters.rematch}}<a href="/movies/?remove=rematch" id="filter">X</a>
+	{% endif %}
+	
+	
+<div id="movies" class ="row">
+	
+{% if movie1 %}
+<div id="movie" class="span3">
+	<img class="poster" src ="/static//{{movie1.imdb_id}}/{{movie1ran}}.jpg">
+	<li><a href ="movie/?id={{movie1.mid}}">{{movie1.title}}</a></li> 
+	<li>{{movie1mat.elorating}}</li>
+	<li>{{movie1mat.numratings}}</li>
+	<wid id="{{movie1.mid}}" type="hidden" name="movie1id"/><br>
+	<lid id="{{movie2.mid}}" type="hidden" name="movie2id"/><br>
+
+
+</div>
+<div id="movie" class = "span3">
+	<img class="poster" src ="/static//{{movie2.imdb_id}}/{{movie2ran}}.jpg">
+	<li>{{movie2.title}}</li> 
+	<li>{{movie2mat.elorating}}</li>
+	<li>{{movie2mat.numratings}}</li>
+	<wid id="{{movie2.mid}}" type="hidden" name="movie2id"><br>
+	<lid id="{{movie1.mid}}" type="hidden" name="movie1id"/><br>
+	
+</div>
+<div class = "span3">
+{% else %}
+{% endif %}
+
+{% if top20 %}
+	{% for i in top20 %}
+		<li>{{forloop.counter}}<a href ="movie/?id={{i.mid.mid}}">{{i.mid.title}}</a></li>
+	{% endfor %}
+{% endif %}
+</div>
+</div>
+

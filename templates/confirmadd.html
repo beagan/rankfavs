@@ -1,0 +1,151 @@
+{% include "base.html" %}
+
+
+<script type="text/javascript" src="/static/jquery.tablesorter.js"></script>
+<script type="text/javascript" src="/static/jquery.flot.js"></script>
+<script type="text/javascript" src="/static/jquery.flot.pie.js"></script>
+
+<li>{{person.name}}</li>
+<li><a href ="/pickthumb?pid={{person.pid}}"><img src ='/static//person/thumb/temp/{{person.temp_id}}.jpg' >
+{% if person.imdb_id %}<li><a href="http://www.imdb.com/name/nm{{person.imdb_id}}">iMDb link</a></li>{% endif %}
+{% if person.netflix_id %}<li><a href="http://movies.netflix.com/RoleDisplay?personid={{person.netflix_id}}">Netflix Link</a></li>{% endif %}
+{% if person.tvrage_id %}<li><a href="http://www.tvrage.com/person/id-{{person.tvrage_id}}/">TVrage Link</a></li>{% endif %}
+{% if person.chickipedia_id %}<li><a href="http://www.mademan.com/chickipedia/{{person.chickipedia_id}}/">Chikipedia Link</a></li>{% endif %}
+{% if person.twitter %}<li><a href="http://twitter.com/{{person.twitter}}/">Twitter Profile</a></li>{% endif %}
+{% if person.wikipedia_link %}<li><a href="http://en.wikipedia.org/wiki/{{person.wikipedia_link}}">Wikipedia Page</a></li>{% endif %}
+
+{% if personscore %}
+<li>{{person.gender}}</li>
+<li>{{personscore.wins}}</li>
+<li>{{personscore.losses}}</li>
+<li>{{personscore.elorating}}</li>
+{% endif %}
+
+<a href ="/addentity/?temp_id={{person.temp_id}}&pics=True">Get Pictures</a>
+
+<form class="form-horizontal" action="/submittemporarypersonedit" method ="post">
+      <fieldset>
+		{% csrf_token %}
+		<legend>Edit Stored Info</legend>
+		<div class="control-group">
+			<label class="control-label" for="input01">Name</label>
+			<div class="controls">
+				<input type="text" name="name" class="search-query" value = "{{person.name}}"><br>
+			</div>
+		</div>
+		
+		<div class="control-group">
+			<label class="control-label" for="input01">Gender</label>
+			<div class="controls">
+		        <select name="Gender">
+					<option{% ifequal person.gender 'Female' %} selected="selected"{% endifequal %}>Female</option>
+					<option{% ifequal person.gender 'Male' %} selected="selected"{% endifequal %}>Male</option>
+				</select><br>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label" for="input01">iMDB ID</label>
+			<div class="controls">
+				<input type="text" name="imdb_id" class="search-query" value = "{{person.imdb_id}}"/>
+				</div>
+			</div>
+		<div class="control-group">
+			<label class="control-label" for="input01">Netflix ID</label>
+			<div class="controls">
+				<input type="text" name="netflix_id" class="search-query" value = "{{person.netflix_id}}"/>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label" for="input01">TVRage ID</label>
+			<div class="controls">
+				<input type="text" name="tvrage_id" class="search-query" value = "{{person.tvrage_id}}"/>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label" for="input01">Chickipedia ID</label>
+			<div class="controls">
+				<input type="text" name="chickipedia_id" class="search-query" value = "{{person.chickipedia_id}}"/>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label" for="input01">Twitter Handle</label>
+			<div class="controls">
+				<input type="text" name="twitter" class="search-query" value = "{{person.twitter}}"/>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label" for="input01">Wikipedia Link</label>
+			<div class="controls">
+				<input type="text" name="wikipedia_link" class="search-query" value = "{{person.wikipedia_link}}"/>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label" for="input01">Date of Birth</label>
+			<div class="controls">
+				<input type="text" name="dob" class="jdpicker" value="{% if dob %}{{dob}}{% else %}1900-01-01{% endif %}" />
+			</div>
+		</div>
+		
+		
+		<div class="control-group">
+			<label class="control-label" for="input01">Images</label>
+			<div class="controls">
+				
+
+		{% for i in range %}
+		<input type="checkbox" name="old{{i}}" id="old{{i}}" />
+		<label for="old{{i}}" onclick="document.getElemenstById.old{{i}}.checked = true;"><img src="/static//person/temp/{{person.temp_id}}/{{i}}.jpg?{{time}}" alt="" width="180"/></label>
+
+		{% endfor %}
+		</div>
+		
+		<div class="control-group">
+			<div class="controls">
+				<label class="checkbox">
+					<input name="commit" type="checkbox"> Commit
+				</label>
+			</div>
+		</div>
+		
+		<input type ="hidden" name="pid" value = "{{person.temp_id}}">
+		
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Save changes</button>
+          <button class="btn">Cancel</button>
+        </div>
+		</fieldset>
+		
+		
+
+		
+		
+		
+		
+</form>
+
+
+
+
+
+
+	<script>
+
+		    $("#reverse").live('click', function(){
+		
+						lid = $(this).find('lid').attr('id');
+						wid = $(this).find('wid').attr('id');
+						elo = $(this).find('elo').attr('id');
+		               	$.post('/reversepersonvote', { 
+			                'csrfmiddlewaretoken': '{{ csrf_token }}',
+			                'winner': wid,
+							'loser': lid, 
+							'elo':elo},
+							function(data) {
+								replace = "<tr id=\"" + data.matchupid + "\"><td>" + data.winner.name + "</td><td>" + data.loser.name + "</td><td>" + data.elo +"</td> <td> <r class=\"btn\" id=\"reverse\"> <wid id=\"" + data.winner.pid + "\" type=\"hidden\"/> <lid id=\"" + data.loser.pid + "\" type=\"hidden\"/> <elo id=\"" + data.elo + "\" type=\"hidden\"/>Reverse</r></td></tr>	"
+								$('#' + data.matchupid).replaceWith(replace)
+							
+	   					     }, "json");
+
+		            });
+
+	</script>
