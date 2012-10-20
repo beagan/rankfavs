@@ -132,7 +132,8 @@ class Person(models.Model):
 	tvrage_id = models.IntegerField(null = True, blank = True,unique=True)
 	chickipedia_id = models.CharField(max_length=128,null = True,blank = True,unique=True)
 	twitter = models.CharField(max_length=128,null=True,blank=True,unique=True)
-	
+
+	bio = models.CharField(max_length=10000,null=True,blank=True)
 	gender = models.CharField(max_length=10,blank=True)
 	dob = models.DateField(null=True,blank =True,default="1900-1-1")
 	nationality = models.CharField(max_length=128)

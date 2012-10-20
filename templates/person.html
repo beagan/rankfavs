@@ -13,6 +13,8 @@
 {% if person.twitter %}<li><a href="http://twitter.com/{{person.twitter}}/">Twitter Profile</a></li>{% endif %}
 {% if person.wikipedia_link %}<li><a href="http://en.wikipedia.org/wiki/{{person.wikipedia_link}}">Wikipedia Page</a></li>{% endif %}
 
+<p>{{person.bio}}</p>
+
 {% if personscore %}
 <li>{{person.gender}}</li>
 <li>{{personscore.wins}}</li>
@@ -38,7 +40,7 @@
 
 <a href="/editperson?pid={{person.pid}}">Edit this person</a>
 
-<a href="/people?lockedin={{person.pid}}">Rank this person</a>
+<a href="/people?p_lockedin={{person.pid}}">Rank this person</a>
 <form action="/removeperson" method ="post">{% csrf_token %}
 	<input type="hidden" name="pid" value ="{{person.pid}}">
 	<input type="submit" value="Remove Person"></input>	

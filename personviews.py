@@ -115,9 +115,9 @@ def PersonMatchHandler(request):
 		results = getOnePerson(fperson, fscore, rematch, person1,request.user.get_profile())
 		person2 = results['person']
 		person2mat = results['matchup']
-
-	elif request.session.get('p_lockedin') != None:
-		person1 = request.session['p_lockedin']#Person.objects.get(pid = request.session['lockedin'])
+	elif 'p_lockedin' in request.session['filtvalues'] and request.session['filtvalues']['p_lockedin'] != None:
+		print "lockedin"
+		person1 = request.session['filtvalues']['p_lockedin']#Person.objects.get(pid = request.session['lockedin'])
 		try:
 			person1mat = UserPersonScore.objects.get(uid = request.user.get_profile(),pid=person1)
 		except:
@@ -130,6 +130,8 @@ def PersonMatchHandler(request):
 		person2 = results['person']
 		person2mat = results['matchup']
 	else:
+		print request.session['filtvalues']
+		print "two people"
 		people = getTwoPeople(fperson,fscore,rematch,request.user.get_profile())		
 		if people == None:
 			person1 = None
@@ -442,7 +444,7 @@ def TemporaryPersonEditSubmitHandler(request):
 		for i in range(1,old+1):
 			if os.path.isfile(dir+str(i)+".jpg"):
 				last=i
-		print last
+		
 		p.images = last
 		
 		d = params['dob'].split("/")
@@ -475,7 +477,10 @@ def TemporaryPersonEditSubmitHandler(request):
 		
 		shutil.move(src,dst)
 		
+		src = "/Users/Jason/person/thumb/temp/" + str(old_id) + ".jpg"
+		dst = "/Users/Jason/person/thumb/" + str(new_id) + ".jpg"
 		
+		shutil.move(src,dst)
 		
 		###Delete old picture folder and transition to new picture folder based on id of the newly saved person		
 		
@@ -732,7 +737,7 @@ def getCloseOnePerson(fperson, fscore, rematch, person1,person1mat,userprof):
 	
 	fscore['elorating__gte'] = person1mat.elorating-50
 	fscore['elorating__lte'] = person1mat.elorating+50
-
+	
 	fscore['uid'] = userprof
 	fscore['neveruse'] = False
 	

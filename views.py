@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from django.contrib import auth
 from django.utils import simplejson
 from django.db.models import Q, Max, Sum, Avg
-from django.db import transaction, connection
+from django.db import transaction, connection, IntegrityError
 from django.shortcuts import redirect
 
 from django.utils import simplejson
@@ -33,13 +33,13 @@ import time, os.path, re, shutil
 import Image
 import operator
 from rankyourfavs.rankfavs.models import *
-from datetime import date
+from datetime import date, datetime
 import Posters, Netflix, TVUtlities
-
+import sys
 import freebase
 import movieviews
 from imdb import IMDb
-
+import re
 
 
 
@@ -142,7 +142,54 @@ def HomeHandler(request,template="index.html",extra_context=None):
 	#chickipediaPage()
 	#peopleInformationGetter()
 	#baseballAlmanac()
+	persons = Person.objects.all()
+	changed = 1
+	for i in persons:
+
+		if False:# i.bio != None:
+			i.bio = unescape(i.bio).encode("utf-8")
+		
+			try:
+				i.bio = i.bio.decode('unicode-escape')
+			except:
+				print "error {}".format(i.pid)
+				changed += 1
+			
+			i.save()
+		if i.wikipedia_link != None and i.bio == None:
+			
+			results = getDOBandBiofromWikipedia(i.wikipedia_link)
+			s_dob = results['dob']
+			bio = results['bio']
+			redirect = results['redirect']
+			if len(bio)>1:
+				i.bio = bio
+				oldwiki = i.wikipedia_link
+				i.wikipedia_link = redirect
+				i.save()
+				print "Changed to {} to this {}".format(oldwiki,redirect)
+			if s_dob != 0 and s_dob != "" and len(s_dob)>1:
+				try:
+					dob = datetime.strptime(s_dob,"%Y-%m-%d")
+				except:
+					try:
+						dob = datetime.strptime(s_dob.replace(' ',''),"%Y-%m-%d")
+						s_dob = s_dob.replace(' ','')
+					except:
+						break
+				stored_dob = datetime.strptime(str(i.dob),"%Y-%m-%d")
+				if dob == stored_dob:
+					print "MATCH IN DA HOUSE"
+				else:
+					print "WE GOT AN IMPOSTER"
+					print "stored {} wiki {} name {} id {}".format(i.dob,dob,i.name,i.pid)
+					i.dob = s_dob
+					changed += 1
+					i.save()
+					print changed
+	print changed
 	
+					
 	#getProfessions()
 	#getThumbs()
 	#recalculateELO()
@@ -224,7 +271,7 @@ def AddEntityPageHandler(request):
 	if request.method=='GET':
 		params = request.GET
 		if 'temp_id' in params:
-
+			
 			temp = TemporaryPerson.objects.get(temp_id = int(params['temp_id']))
 			if 'pics' in params:
 				temp.images = Posters.getPersonTemporaryPicture(temp.name,temp.temp_id)
@@ -233,10 +280,9 @@ def AddEntityPageHandler(request):
 			context = {}
 			context['person'] = temp
 			context['range'] = range(1,temp.images+1)
-
+			
 			context['dob'] = "{}/{}/{}".format(temp.dob.year,temp.dob.month,temp.dob.day)
-
-
+			
 			message = render_to_response('confirmadd.html',context,context_instance=RequestContext(request))
 			return HttpResponse(message)
 	context={}
@@ -278,18 +324,30 @@ def AddEntityHandler(request):
 		if links['wikipedia_link'] != None and freebase == None:
 			freebase = getFreebaseData('wikipedia',links['wikipedia_link'])
 		else:	
-			freebase = None
+			freebase = getFreebaseData('name',params['name'])
 				
 		
 		if freebase != None:
-			person = addFromFreebase(freebase)
-			pid = person.pid
+			person = addTemporaryFromFreebase(freebase)
+			if person != None:
+				pid = person.temp_id
 			
-			person.images = Posters.getPersonPicture(person.name,person.pid)
-			person.save()
+				person.images = Posters.getPersonTemporaryPicture(person.name,person.temp_id)
+				person.save()
+				try:
+					person.save()
+				except:
+					print person.imdb_id
+					try:
+						person = TemporaryPerson.objects.get(imdb_id = person.imdb_id)
+					except:
+						print "NONE"
+						return "NONE"
 		
-			url = '/editperson?pid=' + str(pid)
-			return redirect(url)
+				url = '/addentity/?temp_id=' + str(person.temp_id)
+				return redirect(url)
+			else:
+				print "there was an error"
 		else:
 			if 'gender' in params:
 				gender = params['gender']
@@ -310,6 +368,7 @@ def AddEntityHandler(request):
 			
 			
 			temp = TemporaryPerson(name = params['name'],gender=gender,imdb_id=imdb_id,twitter=twitter,wikipedia_link=wikipedia_link)
+			
 			if params['dob'] != "":
 				d = params['dob'].split("/")
 				temp.dob = date(int(d[0]),int(d[1]),int(d[2]))
@@ -327,7 +386,6 @@ def AddEntityHandler(request):
 			context['range'] = range(1,temp.images+1)
 			
 			context['dob'] = "{}/{}/{}".format(temp.dob.year,temp.dob.month,temp.dob.day)
-
 			
 			print context
 			message = render_to_response('confirmadd.html',context,context_instance=RequestContext(request))
@@ -337,6 +395,7 @@ def AddEntityHandler(request):
 	
 	message = render_to_response('addentity.html',context,context_instance=RequestContext(request))
 	return HttpResponse(message)
+
 
 def sanitizeLinks(params):
 	links={}
@@ -1381,15 +1440,17 @@ def addTemporaryFromFreebase(freebase):
 			p.name = result['name']
 			try:
 				p.save()
-			except:
+			except IntegrityError, error:
 				connection._rollback()
-		
-				print "Unexpected error:", sys.exc_info()
-				print person
+				if str(error).split('Key (')[1].split(')=')[0] == 'imdb_id':
+					return TemporaryPerson.objects.get(imdb_id = person[str(error).split('Key (')[1].split(')=')[0]])
+				elif str(error).split('Key (')[1].split(')=')[0] == 'wikipedia_link':
+					return TemporaryPerson.objects.get(wikipedia_link = person[str(error).split('Key (')[1].split(')=')[0]])
+				else:
+					return None
 				print len(person)
 				print "dup"
 			return p
-	
 	return p
 	
 	
@@ -1663,6 +1724,57 @@ def addByWikiID(data):
 				print "dup"
 			return p
 	return None
+
+
+def getDOBandBiofromWikipedia(wiki_link):
+	
+	cpurl = "http://en.wikipedia.org/w/api.php?action=parse&prop=text&page=" + wiki_link + "&format=json"
+	cpurl = cpurl.replace(" ", "%20")
+	headers = {
+		'User-Agent' : "Magic Browser",
+		'Connection':	'Keep-Alive',
+	}
+	#cpurl = urllib.urlencode(cpurl)
+	data=""
+	req = urllib2.Request(cpurl, data, headers)
+	#urlsvisited.append(cpurl)
+	f = urllib2.urlopen(req)
+	htmlSource = f.read()
+	f.close()
+	dob = ""
+	redirect = None
+	if len(htmlSource.split('REDIRECT'))>1:
+		redirect = htmlSource.split('<a href=\\"\\/wiki\\/')[1].split('\\\"')[0]
+		
+		cpurl = "http://en.wikipedia.org/w/api.php?action=parse&prop=text&page=" + redirect + "&format=json"
+		data = ""
+		req = urllib2.Request(cpurl, data, headers)
+		#urlsvisited.append(cpurl)
+		f = urllib2.urlopen(req)
+		htmlSource = f.read()
+		f.close()
+	#print len(htmlSource.split('(<span class=\"bday\">'))
+	if len(htmlSource.split('<p><b>'))>1:
+		bio = htmlSource.split('<p><b>')[1].split('<\/p>')[0].replace('\/','/').replace("\\\"","\"")
+
+		bio = re.sub('<[^<]+?>', '', bio)
+		bio = re.sub('\[\d\]','',bio)
+		bio = unescape(bio)
+		try:
+			bio = bio.decode('unicode-escape')
+		except:
+			print "decode error"
+	else:
+		bio = ""
+	print bio
+	
+	if len(htmlSource.split('<span class=\\"bday\\">'))>1:
+		dob = 0
+		if len(htmlSource.split('<span class=\\"bday\\">')[1].split('<\/span>'))>1:
+			dob = htmlSource.split('<span class=\\"bday\\">')[1].split('<\/span>')[0]
+		else:
+			dob = 0
+	return {'dob':dob,'bio':bio,'redirect':redirect}
 
 
 def processIMDbList(lnk):

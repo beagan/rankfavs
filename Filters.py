@@ -58,7 +58,7 @@ def setFromParams(request,params,src_type):
 	if src_type == 'person':
 		if 'p_lockedin' in params:
 			p = Person.objects.get(pid=params['p_lockedin'])
-			request.session['p_lockedin'] = p#params['lockedin']
+			request.session['filtvalues']['p_lockedin'] = p#params['lockedin']
 			request.session['filtdict']['p_lockedin'] = p.name#params['lockedin']
 			
 			#If you are locking someone in the gametype will not be enforced as it does not make logical sense

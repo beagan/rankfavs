@@ -488,40 +488,42 @@ def getPersonTemporaryPicture(name,id):
 							    if isinstance(e.reason, socket.timeout):
 							        print ("There was an error: %r" % e)
 							
-							contenttype = resp.headers["content-type"]
-							if contenttype=="image/jpeg" or contenttype=="image/jpg" or contenttype=="image/gif" or contenttype=="image/JPEG" or contenttype == "image/png" or contenttype == "image/jpeg; charset=utf-8" or contenttype == "image/jpeg;charset=UTF-8":
-								size = len(data)
-								if size in sizes:
-									print "DUPLICATE"
-								elif size <= 9000:
-									print "TOO SMALL"
-								else:
-									f = open('/Users/Jason/tmp/tmp'+str(11)+'.jpg','wb')
-									sizes.append(size)
-									f.write(data)
-									f.close()
-									samepic = False
-									diff=1000
-									for i in range(1,c):
-										oldf = "/Users/Jason/person/temp" + str(id) + '/' + str(i) + ".jpg"
-										if (os.path.isfile(oldf)): 
-											diff = compare(oldf,'/Users/Jason/tmp/tmp'+str(11)+'.jpg')
-											if diff < 299:
-												samepic = True
-									if samepic == False:
-										c+=1
-										im = Image.open('/Users/Jason/tmp/tmp'+str(11)+'.jpg')
-										if im.mode != "RGB":
-											im = im.convert("RGB")
-										try:
-											im.save(file,"JPEG",optimize=True)
-										except IOError:
-											#ImageFile.MAXBLOCK = im.size[0] * im.size[1]
-											im.save(file, "JPEG")
+							try:
+								contenttype = resp.headers["content-type"]
+								if contenttype=="image/jpeg" or contenttype=="image/jpg" or contenttype=="image/gif" or contenttype=="image/JPEG" or contenttype == "image/png" or contenttype == "image/jpeg; charset=utf-8" or contenttype == "image/jpeg;charset=UTF-8":
+									size = len(data)
+									if size in sizes:
+										print "DUPLICATE"
+									elif size <= 9000:
+										print "TOO SMALL"
 									else:
-										print "DUPLICATE BY RMS"
-							else:
-								print resp.headers["content-type"]
+										f = open('/Users/Jason/tmp/tmp'+str(11)+'.jpg','wb')
+										sizes.append(size)
+										f.write(data)
+										f.close()
+										samepic = False
+										diff=1000
+										for i in range(1,c):
+											oldf = "/Users/Jason/person/temp" + str(id) + '/' + str(i) + ".jpg"
+											if (os.path.isfile(oldf)): 
+												diff = compare(oldf,'/Users/Jason/tmp/tmp'+str(11)+'.jpg')
+												if diff < 299:
+													samepic = True
+										if samepic == False:
+											c+=1
+											im = Image.open('/Users/Jason/tmp/tmp'+str(11)+'.jpg')
+											if im.mode != "RGB":
+												im = im.convert("RGB")
+											try:
+												im.save(file,"JPEG",optimize=True)
+											except IOError:
+												#ImageFile.MAXBLOCK = im.size[0] * im.size[1]
+												im.save(file, "JPEG")
+										else:
+											print "DUPLICATE BY RMS"
+								else:
+									print resp.headers["content-type"]
+							except:
 								print "not a pic"		
 							#image.urlretrieve(i['unescapedUrl'], "tmp.jpg")
 							#im = Image.open("tmp.jpg")
