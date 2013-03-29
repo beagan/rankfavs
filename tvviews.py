@@ -5,6 +5,7 @@ from django.shortcuts import render_to_response
 import random
 import math
 import operator
+import time
 from django.http import HttpResponse
 from django.db.models import Q
 from django.shortcuts import redirect
@@ -231,6 +232,16 @@ def TVShowMatchHandler(request):
 		context['ranks'] = ranks
 	
 	
+	#t1 = time.time()
+	#count = 0
+	
+	#for i in range(1,1000):
+	#	testtvshows = getTwoTVshows(ftvshow,fscore,request.user.get_profile())
+	#	count += testtvshows['count']
+	#t2 = time.time()
+	
+	#print "1000 2 tv shows was {} count was {}".format(t2-t1,count)
+	
 	context['filters'] = request.session.get('filtdict')
 	print context
 	context['tvshow1'] = tvshow1
@@ -434,7 +445,13 @@ def getTwoTVshows(ftvshow, fscore, userprof):
 		tvshow1=None
 		tvshow2=None
 		notvshow = True
+		
+		##TEMPORARY
+		count = 0
+		
 		for i in range(0,len(randtvshows)-1):
+			count += 1
+			
 			tvshow1 = randtvshows[i]
 			
 			havntused1 = False
@@ -482,6 +499,10 @@ def getTwoTVshows(ftvshow, fscore, userprof):
 								tvshows['1mat'] = tvshow1mat
 								tvshows['2'] = tvshow2
 								tvshows['2mat'] = tvshow2mat
+
+								#TEMPORARY
+								tvshows['count'] = count
+								
 								return tvshows
 							else:
 								#As didnt use the objects delete to not create unecessary data
@@ -502,6 +523,9 @@ def getTwoTVshows(ftvshow, fscore, userprof):
 	tvshows['1mat'] = tvshow1mat
 	tvshows['2'] = tvshow2
 	tvshows['2mat'] = tvshow2mat
+	
+	#TEMPORARY
+	tvshows['count'] = count
 	return tvshows
 
 ###TO DO FILTER ON FSCORE
@@ -551,11 +575,7 @@ def getOneTVshow(ftvshow, fscore, tvshow1,userprof):
 	if notvshow == True:
 		return None
 	
-	
-	return tvshow2
-	
-
-
+	return tvshow2	
 
 
 def CalculateRating(type,winner,loser,u):

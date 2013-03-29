@@ -8,8 +8,6 @@ max-width:450px;
 
 
 
-
-
 <div id="view">
 	
 	
@@ -120,17 +118,16 @@ max-width:450px;
 {% if movie1 %}
 <div id="movie" class="span3">
 	<img class="poster" src ="/static//{{movie1.imdb_id}}/{{movie1ran}}.jpg">
-	<li><a href ="movie/?id={{movie1.mid}}">{{movie1.title}}</a></li> 
+	<li><a href ="movie/?mid={{movie1.mid}}">{{movie1.title}}</a></li> 
 	<li>{{movie1mat.elorating}}</li>
 	<li>{{movie1mat.numratings}}</li>
 	<wid id="{{movie1.mid}}" type="hidden" name="movie1id"/><br>
 	<lid id="{{movie2.mid}}" type="hidden" name="movie2id"/><br>
 
-
 </div>
 <div id="movie" class = "span3">
 	<img class="poster" src ="/static//{{movie2.imdb_id}}/{{movie2ran}}.jpg">
-	<li>{{movie2.title}}</li> 
+	<li><a href ="movie/?mid={{movie2.mid}}">{{movie2.title}}</a></li> 
 	<li>{{movie2mat.elorating}}</li>
 	<li>{{movie2mat.numratings}}</li>
 	<wid id="{{movie2.mid}}" type="hidden" name="movie2id"><br>
@@ -138,12 +135,49 @@ max-width:450px;
 	
 </div>
 <div class = "span3">
+	
+
+{% if ranks %}
+<table>
+	<tr>
+		<td>
+		Loser
+		</td>
+		<td>
+		{{ranks.oldloser}}
+		</td>
+		<td>
+		{{ranks.newloser}}
+		</td>
+		<td>
+		{{ranks.loserchange}}
+		</td>
+	</tr>
+	<tr>
+		<td>
+		Winner
+		</td>
+		<td>
+		{{ranks.oldwinner}}
+		</td>
+		<td>
+		{{ranks.newwinner}}
+		</td>
+		<td>
+		{{ranks.winnerchange}}
+		</td>
+</table>
+{% endif %}
+
+	
+
 {% else %}
+NO MOVIES
 {% endif %}
 
 {% if top20 %}
 	{% for i in top20 %}
-		<li>{{forloop.counter}}<a href ="movie/?id={{i.mid.mid}}">{{i.mid.title}}</a></li>
+		<li>{{forloop.counter}}<a href ="movie/?mid={{i.mid.mid}}">{{i.mid.title}}</a></li>
 	{% endfor %}
 {% endif %}
 </div>

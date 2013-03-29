@@ -1,4 +1,5 @@
-from rankfavs.models import Person
+from rankyourfavs.rankfavs.models import *
 from django.contrib import admin
 
 admin.site.register(Person)
+admin.site.register(PersonTag)

@@ -22,76 +22,81 @@
 {% endif %}
 
 
-
-<form class="form-horizontal" action="/submitpersonedit" method ="post">
+<form class="form-horizontal" action="/editperson" method ="post">
       <fieldset>
 		{% csrf_token %}
 		<legend>Edit Stored Info</legend>
+		{{form.non_field_errors}}
 		<div class="control-group">
-			<label class="control-label" for="input01">Name</label>
+				{{form.name.errors}}
+			<label class="control-label" for="name">Name</label>
 			<div class="controls">
-				<input type="text" name="name" class="search-query" value = "{{person.name}}"><br>
+				{{form.name}}
 			</div>
 		</div>
 		
 		{% ifequal person.gender 'Female' %}
 		<div class="control-group">
-			<label class="control-label" for="input01">Maiden Name</label>
+			<label class="control-label" for="maiden_name">Maiden Name</label>
 			<div class="controls">
-				<input type="text" name="maiden_name" class="search-query" value = "{{person.maidenname}}"><br>
+				{{form.maiden_name}}
 			</div>
 		</div>
 		{% endifequal %}
 		
 		<div class="control-group">
-			<label class="control-label" for="input01">Gender</label>
+			<label class="control-label" for="gender">Gender</label>
 			<div class="controls">
-		        <select name="Gender">
-					<option{% ifequal person.gender 'Female' %} selected="selected"{% endifequal %}>Female</option>
-					<option{% ifequal person.gender 'Male' %} selected="selected"{% endifequal %}>Male</option>
-				</select><br>
+		        {{form.gender}}
 			</div>
 		</div>
 		<div class="control-group">
-			<label class="control-label" for="input01">iMDB ID</label>
+			<label class="control-label" for="imdb_id">iMDB ID</label>
 			<div class="controls">
-				<input type="text" name="imdb_id" class="search-query" value = "{{person.imdb_id}}"/>
-				</div>
-			</div>
-		<div class="control-group">
-			<label class="control-label" for="input01">Netflix ID</label>
-			<div class="controls">
-				<input type="text" name="netflix_id" class="search-query" value = "{{person.netflix_id}}"/>
+				{{form.imdb_id}}
 			</div>
 		</div>
 		<div class="control-group">
-			<label class="control-label" for="input01">TVRage ID</label>
+			<label class="control-label" for="netflix_id">Netflix ID</label>
 			<div class="controls">
-				<input type="text" name="tvrage_id" class="search-query" value = "{{person.tvrage_id}}"/>
+				{{form.netflix_id}}
 			</div>
 		</div>
 		<div class="control-group">
-			<label class="control-label" for="input01">Chickipedia ID</label>
+			<label class="control-label" for="tvrage_id">TVRage ID</label>
 			<div class="controls">
-				<input type="text" name="chickipedia_id" class="search-query" value = "{{person.chickipedia_id}}"/>
+				{{form.tvrage_id}}
 			</div>
 		</div>
 		<div class="control-group">
-			<label class="control-label" for="input01">Twitter Handle</label>
+			<label class="control-label" for="chickipedia_id">Chickipedia ID</label>
 			<div class="controls">
-				<input type="text" name="twitter" class="search-query" value = "{{person.twitter}}"/>
+				{{form.chickipedia_id}}
 			</div>
 		</div>
 		<div class="control-group">
-			<label class="control-label" for="input01">Wikipedia Link</label>
+			<label class="control-label" for="twitter">Twitter Handle</label>
 			<div class="controls">
-				<input type="text" name="wikipedia_link" class="search-query" value = "{{person.wikipedia_link}}"/>
+				{{form.twitter}}
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label" for="wikipedia_link">Wikipedia Link</label>
+			<div class="controls">
+				{{form.wikipedia_link}}
 			</div>
 		</div>
 		<div class="control-group">
 			<label class="control-label" for="input01">Date of Birth</label>
 			<div class="controls">
-				<input type="text" name="dob" class="jdpicker" value="{{dob}}" />
+				{{form.dob}}
+			</div>
+		</div>
+		
+		<div class="control-group">
+			<label class="control-label" for="input01">Tags</label>
+			<div class="controls">
+				{{form.tags}}
 			</div>
 		</div>
 		

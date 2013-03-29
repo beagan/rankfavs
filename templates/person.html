@@ -3,9 +3,11 @@
 <script type="text/javascript" src="/static/jquery.tablesorter.js"></script>
 <script type="text/javascript" src="/static/jquery.flot.js"></script>
 <script type="text/javascript" src="/static/jquery.flot.pie.js"></script>
+<script type="text/javascript" src="/static/custom.js"></script>
+
 
 <li>{{person.name}}</li>
-<li><a href ="/pickthumb?pid={{person.pid}}"><img src ='/static//person/thumb/{{person.pid}}.jpg' >
+<li><a href ="/pickthumb?pid={{person.pid}}"><img src ='/static//person/thumb/{{person.pid}}.jpg'>
 {% if person.imdb_id %}<li><a href="http://www.imdb.com/name/nm{{person.imdb_id}}">iMDb link</a></li>{% endif %}
 {% if person.netflix_id %}<li><a href="http://movies.netflix.com/RoleDisplay?personid={{person.netflix_id}}">Netflix Link</a></li>{% endif %}
 {% if person.tvrage_id %}<li><a href="http://www.tvrage.com/person/id-{{person.tvrage_id}}/">TVrage Link</a></li>{% endif %}
@@ -13,9 +15,17 @@
 {% if person.twitter %}<li><a href="http://twitter.com/{{person.twitter}}/">Twitter Profile</a></li>{% endif %}
 {% if person.wikipedia_link %}<li><a href="http://en.wikipedia.org/wiki/{{person.wikipedia_link}}">Wikipedia Page</a></li>{% endif %}
 
-<p>{{person.bio}}</p>
-
+{% if person.bio %}<p>{{person.bio}}</p>{% endif %}
+{% if person.persontagged %}
+<p>{% for i in person.tags.all %}
+	<a href="/searchperson?tag={{i.slug}}">{{i.name}}</a>
+	{% endfor %}</p>
+{% endif %}
 {% if personscore %}
+<li>Popularity Rating: {{person.popularity_rating}}</li>
+<li>Google Results: {{person.google_results_percentile}}</li>
+<li>Google Volume: {{person.google_search_volume_percentile}}</li>
+<li>Bing Results: {{person.bing_results_percentile}}</li>
 <li>{{person.gender}}</li>
 <li>{{personscore.wins}}</li>
 <li>{{personscore.losses}}</li>
@@ -47,11 +57,27 @@
 </form>
 
 
+<div class="row-fluid">
+				
+				
+				
+				
 
-<div id="placeholder" style="width:85%;height:300px;horizontal-align:middle;"></div>
+<div class="box span8" onTablet="span12" onDesktop="span8">
+	<div class="box-header">
 
-    <div id="interactive" style="width:85%;height:300px;horizontal-align:middle;"></div>
-<div id="hover"></div>
+		<div class="box-icon">
+			<a href="#" class="btn-setting"><i class="icon-wrench"></i></a>
+			<a href="#" class="btn-minimize"><i class="icon-chevron-up"></i></a>
+			<a href="#" class="btn-close"><i class="icon-remove"></i></a>
+		</div>
+	</div>
+	<div class="box-content">
+		<div id="stats-chart"  class="center" style="height:300px" ></div>
+	</div>
+</div>
+
+</div>
 
 
 {% if matchups %}
@@ -74,6 +100,7 @@
 	</table>
 	</div>
 {% endif %}
+
 
 
 
@@ -145,6 +172,16 @@ $(this).css("color","black");
 
 
 
+<script type="text/javascript">
+$(document).ready(function(){
+    $("img").each(function(){
+        var imgObj = $(this);
+        var img = new Image();
+        img.onerror=function(){ imgObj.attr('src','/static//person/placeholder-female.jpg'); }
+        img.src = imgObj.attr('src');
+    });
+});
+</script>
 
 
 

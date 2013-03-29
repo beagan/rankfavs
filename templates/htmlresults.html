@@ -13,4 +13,31 @@
 		</tr>
 	{% endfor %}
 {% endif %}
+{% if sresults %}
+	{% for i in sresults %}
+		<tr>
+		<td><img src="/static//person/thumb/{{i.pid.pid}}.jpg"/></td>
+		<td><a href ="person/?pid={{i.pid.pid}}">{{i.pid.name}}</a></td>
+		<td>{{i.elorating}}</td>
+		<td class="btn" id="reverse">
+			<a id="{{i.pid}}" type="hidden"/>
+			Make Thumb
+		</td>
+		</tr>
+	{% endfor %}
+{% endif %}
+{% if taglist %}
+	{% for i in taglist %}
+		<tr>
+		<td><img src="/static//person/thumb/{{i.pid.pid}}.jpg"/></td>
+		<td><a href ="person/?pid={{i.pid.pid}}">{{i.pid.name}}</a></td>
+		<td>{{i}}</td>
+		<td class="btn" id="reverse">
+			<a id="{{i.pid}}" type="hidden"/>
+			Make Thumb
+		</td>
+		</tr>
+	{% endfor %}
+{% endif %}
+
 </table>

@@ -21,13 +21,14 @@ def setFromParams(request,params,src_type):
 	if 'clearfilters' in params:
 		request.session['filtdict'] = {}
 		request.session['filtvalues'] = {}
+		request.session['filtvalues']['rematch'] = False
 	if 'remove' in params:
 		if params['remove'] == "rematch":
 			request.session['filtvalues']['rematch'] = False
 		elif params['remove'] in request.session['filtvalues']:
 			del request.session['filtvalues'][params['remove']]
 		if params['remove'] in request.session['filtdict']:
-			del request.session['filtdict'][params['remove']]	
+			del request.session['filtdict'][params['remove']]
 	if 'gametype' in params:
 		if params['gametype'] == "winner":
 			request.session['filtdict']['gametype'] = "Winner Stays"
@@ -54,16 +55,24 @@ def setFromParams(request,params,src_type):
 			request.session['filtdict']['list'] = "Undefeated"
 		if params['list'] == 'newbie':
 			request.session['filtdict']['list'] = "Newbie"
-	
 	if src_type == 'person':
+		if 'p_tag' in params:
+			if params['p_tag'] == "All Categories":
+				del request.session['filtvalues']['p_tag']
+				del request.session['filtdict']['p_tag']
+			else:
+				request.session['filtdict']['p_tag'] = PersonTag.objects.get(slug=params['p_tag']).name
+				request.session['filtvalues']['p_tag'] = params['p_tag']
 		if 'p_lockedin' in params:
 			p = Person.objects.get(pid=params['p_lockedin'])
 			request.session['filtvalues']['p_lockedin'] = p#params['lockedin']
 			request.session['filtdict']['p_lockedin'] = p.name#params['lockedin']
-			
+			print "lockedinaaa"
 			#If you are locking someone in the gametype will not be enforced as it does not make logical sense
 			if 'gametype' in request.session['filtdict'] and (request.session['filtdict']['gametype'] == 'Winner Stays' or request.session['filtdict']['gametype'] == 'Loser Stays'):
 				del request.session['filtdict']['gametype']
+			if 'list' in request.session['filtdict'] and request.session['filtdict']['list'] == 'Undefeated':
+				del request.session['filtdict']['list']
 		if 'gender' in params:
 			if params['gender'] == "Female":
 				request.session['filtdict']['gender'] = "Female"
@@ -89,7 +98,16 @@ def setFromParams(request,params,src_type):
 				request.session['filtdict']['age'] = "Over 50"
 				request.session['filtvalues']['age'] = 51
 
-	
+	if src_type == "tvshow":
+		if 'tv_lockedin' in params:
+			t = TVShow.objects.get(tid = params['tv_lockedin'])
+			request.session['tv_lockedin'] = t
+			request.session['filtdict']['tv_lockedin'] = t.title
+			if 'gametype' in request.session['filtdict'] and (request.session['filtdict']['gametype'] == 'Winner Stays' or request.session['filtdict']['gametype'] == 'Loser Stays'):
+				del request.session['filtdict']['gametype']
+			if 'list' in request.session['filtdict'] and request.session['filtdict']['list'] == 'Undefeated':
+				del request.session['filtdict']['list']
+			
 	if src_type == "movie":
 		if 'm_lockedin' in params:
 			m = Movie.objects.get(pid=params['m_lockedin'])
@@ -208,6 +226,8 @@ def getPersonAndScoreFilters(request):
 	fperson = {}
 	fscore = {}
 	topfperson = {}
+	if 'p_tag' in request.session['filtdict']:
+		fperson['tags__slug'] = request.session['filtvalues']['p_tag']
 	if 'age' in request.session['filtvalues']: 
 		if request.session['filtvalues']['age'] < 51:
 			year = 2012 - int(request.session['filtvalues']['age'])

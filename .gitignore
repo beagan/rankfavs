@@ -3,7 +3,13 @@
 *.png
 .DS_Store
 /migrations
+/static
 file
+
+ciaadmin2012.csv
+cianat2012.csv
+cianat2012my.csv
+cianat2012.txt
 
 templatetags/__init__.py
 

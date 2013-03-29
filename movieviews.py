@@ -5,6 +5,7 @@ from django.shortcuts import render_to_response
 import random
 import math
 import operator
+import time
 from django.http import HttpResponse
 from django.db.models import Q
 import simplejson
@@ -12,6 +13,7 @@ import httplib2
 import cStringIO
 import csv
 import Filters
+import MovieUtilities
 
 def IMDBUserCSVHandler(request):
 	lnk = request.POST['imdblink']
@@ -28,17 +30,20 @@ def IMDBUserCSVHandler(request):
 			if i[6] == "Feature Film":
 				try:
 					m = Movie.objects.get(imdb_id = i[1].split('tt')[1])
-					print "stored: {} imdb: {}".format(m.title,i[5])
-					try:
-						mov = UserMovieScore.objects.get(uid = u,mid = m.mid)
-						mov.imdb_rating=i[8]
-						mov.seen=True
-						mov.save()
-					except:
-						mov = UserMovieScore(uid = u, mid = m.mid, elorating = 1000,seen=True,imdb_rating=i[8],numratings =0,wins=0,losses=0)
-						mov.save()
+					#print "stored: {} imdb: {}".format(m.title,i[5])
 				except:
-					print "none {}".format(i[5])
+					MovieUtilities.IMDb2Netflix(i[1])
+					m = MovieUtilities.addMovie(i[1],"imdb")
+					print "none {} {}".format(i[5],i[1])
+				try:
+					mov = UserMovieScore.objects.get(uid = u,mid = m)
+					mov.imdb_rating=i[8]
+					mov.seen=True
+					mov.save()
+				except:
+					mov = UserMovieScore(uid = u, mid = m, elorating = 1000,seen=True,imdb_rating=i[8],numratings =0,wins=0,losses=0)
+					mov.save()
+				
 	print count
 	data = "poop"
 	return HttpResponse(data, mimetype='application/javascript')
@@ -104,6 +109,8 @@ def MovieMatchHandler(request):
 	fmovie = {}
 	fscore = {}
 	context= {}
+	prevvote = False
+	
 	if request.is_ajax():
 		if request.method == 'GET':
 			params = request.GET
@@ -115,7 +122,8 @@ def MovieMatchHandler(request):
 			if params['year']:
 				year = params['year']
 			userprofile = request.user.get_profile()
-			CalculateRating('movie',winner,loser,userprofile)
+			ranks = CalculateRating('movie',winner,loser,userprofile)
+			prevvote = True
 			template = "movievotingview.html"
 	else:
 		params = {}
@@ -153,7 +161,6 @@ def MovieMatchHandler(request):
 		results = getOneMovie(fmovie, fscore, rematch, movie1,request.user.get_profile())
 		movie2 = results['Movie']
 		movie2mat = results['matchup']
-
 	elif request.session.get('m_lockedin') != None:
 		movie1 = request.session['p_lockedin']#Movie.objects.get(mid= request.session['lockedin'])
 		try:
@@ -168,17 +175,17 @@ def MovieMatchHandler(request):
 		movie2 = results['Movie']
 		movie2mat = results['matchup']
 	else:
-		people = getTwoMovies(fmovie,fscore,rematch,request.user.get_profile())		
-		if people == None:
+		movies = getTwoMovies(fmovie,fscore,rematch,request.user.get_profile(),80)		
+		if movies == None:
 			movie1 = None
 			movie2 = None
 			movie1mat = None
 			movie2mat = None
 		else:
-			movie1 = people['1']
-			movie2 = people['2']
-			movie1mat = people['1mat']
-			movie2mat = people['2mat']
+			movie1 = movies['1']
+			movie2 = movies['2']
+			movie1mat = movies['1mat']
+			movie2mat = movies['2mat']
 	if movie1 == None or movie2 == None:
 		movie1 = None
 		movie2 = None
@@ -190,6 +197,18 @@ def MovieMatchHandler(request):
 	top25 = UserMovieScore.objects.filter(uid=request.user.get_profile()).order_by('elorating').reverse()
 	if (top25.count()>25):
 		top25 = top25[:25]
+	
+	if prevvote:
+		context['ranks'] = ranks
+	
+	t1 = time.time()
+	
+	#count = 0
+	#for i in range(1,1000):
+	#	testmovies = getTwoMovies(fmovie,fscore,rematch,request.user.get_profile(),25)
+	#	count += testmovies['count']
+	#t2 = time.time()
+	#print "time was {} count was {}".format(t2-t1,count)
 	
 	context['moviebar']= True
 	context['movie1'] = movie1
@@ -207,6 +226,9 @@ def MovieMatchHandler(request):
 	context['filters'] = request.session.get('filtdict')
 	
 	#return_str = render_block_to_string('subtemplate.html', 'results', context)
+	print context
+	print movie1
+	print movie2
 	
 	message = render_to_response(template, context,context_instance=RequestContext(request))
 	return HttpResponse(message)	
@@ -222,12 +244,12 @@ def MovieListHandler(request):
 	context['umovie'] = {}
 	for i in ugames:
 		context['umovie'][i.mid.mid] = i.seen
-	
-	
 	template = "movielist.html"
 	message = render_to_response(template, context,
 		context_instance=RequestContext(request))
 	return HttpResponse(message)
+
+
 
 
 def MovieWatchedHandler(request):
@@ -240,13 +262,24 @@ def MovieWatchedHandler(request):
 			print params
 			userprof = request.user.get_profile()
 			movie = Movie.objects.get(mid = params['movie'])
-			try:
-				moviemat = UserMovieScore.objects.get(mid=movie,uid=userprof)
-				moviemat.seen = True
-				moviemat.save()
-			except:
-				moviemat = UserMovieScore(uid =userprof, mid = movie, seen = True, elorating = 1000,numratings =0,wins=0,losses=0)
-				moviemat.save()
+			if int(params['seen']) == 1:
+				try:
+					moviemat = UserMovieScore.objects.get(mid=movie,uid=userprof)
+					moviemat.seen = True
+					if moviemat.elorating == 0:
+						moviemat.elorating = 1000
+					moviemat.save()
+				except:
+					moviemat = UserMovieScore(uid =userprof, mid = movie, seen = True, elorating = 1000,numratings =0,wins=0,losses=0)
+					moviemat.save()
+			else:
+				try:
+					moviemat = UserMovieScore.objects.get(mid=movie,uid=userprof)
+					moviemat.seen = False
+					moviemat.save()
+				except:
+					moviemat = UserMovieScore(uid =userprof, mid = movie, seen = False, elorating = 0,numratings =0,wins=0,losses=0)
+					moviemat.save()
 	data = [0]
 	return HttpResponse(data, mimetype='application/javascript')
 
@@ -270,6 +303,14 @@ def CalculateRating(type,winner,loser,u):
 		except:
 			losersc = UserMovieScore(uid =u, mid = loser, elorating = 1000,numratings =0,wins=0,losses=0)
 			losersc.save()
+		
+		fwinner = {}
+		floser = {}
+		fwinner['elorating__gt'] = winnersc.elorating
+		floser['elorating__gt'] = losersc.elorating
+		
+		oldwinnerrank = UserMovieScore.objects.filter(**fwinner).count()+1
+		oldloserrank = UserMovieScore.objects.filter(**floser).count()+1
 	
 	
 		matchup = MovieMatchup.objects.filter((Q(winner=winner) & Q(loser=loser)) | (Q(loser=winner) & Q(winner=loser)))
@@ -297,18 +338,44 @@ def CalculateRating(type,winner,loser,u):
 			losersc.save()
 			print winnersc.elorating
 			print losersc.elorating
-
+		
+		
+		
+		fwinner['elorating__gt'] = winnersc.elorating
+		floser['elorating__gt'] = losersc.elorating
+	
+		newwinnerrank = UserMovieScore.objects.filter(**fwinner).count()+1
+		newloserrank = UserMovieScore.objects.filter(**floser).count()+1
+	
+		winnersc.rank = newwinnerrank
+		losersc.rank = newloserrank
+	
+		winnersc.save()
+		losersc.save()
+	
+		ranks = {}
+		ranks['oldwinner'] = oldwinnerrank
+		ranks['newwinner'] = newwinnerrank
+		ranks['winnerchange'] = oldwinnerrank-newwinnerrank 
+		ranks['oldloser'] = oldloserrank
+		ranks['newloser'] = newloserrank
+		ranks['loserchange'] = oldloserrank - newloserrank
+		return ranks
 
 def MovieHandler(request):
 	params= request.GET
 	
-	if 'id' in params:
-		mid = params["id"]
+	if 'mid' in params:
+		mid = params["mid"]
 		
 	userprofile = request.user.get_profile()
 	
 	m = Movie.objects.get(mid = mid)
-	mm = UserMovieScore.objects.get(mid = mid)
+	
+	try:
+		mm = UserMovieScore.objects.get(mid = mid)
+	except:
+		mm = None
 	matchups = MovieMatchup.objects.filter(Q(winner=mid) | Q(loser=mid)).order_by('matchupid')
 	
 	context = {
@@ -320,6 +387,16 @@ def MovieHandler(request):
 	message = render_to_response('movie.html',context,context_instance=RequestContext(request))
 	return HttpResponse(message)
 	
+
+
+def netflix_idUpdater():
+	movies = Movie.objects.filter(netflix_id=None)
+	for i in movies:
+		
+		netflix_id = MovieUtilities.IMDb2Netflix(i.imdb_id)
+		if netflix_id > 0:
+			i.netflix_id = netflix_id
+			i.save()
 
 
 def getOneMovie(fmovie, fscore, movie1,userprof):
@@ -367,8 +444,15 @@ def getOneMovie(fmovie, fscore, movie1,userprof):
 	return movie2
 
 
-def getTwoMovies(fmovie, fscore, rematch, userprof):
+def getTwoMovies(fmovie, fscore, rematch, userprof,recurse):
 	#print fscore
+	r = int(round(math.log(random.uniform(1,10),10)*10))
+	fmovie['rating_metric'] = r
+	print "pop rating threshold {}".format(r)
+	print recurse
+	if recurse == 0:
+		return None
+	
 	if fscore != {}:
 		for i in fmovie:
 			index = "mid__" + str(i)
@@ -394,16 +478,26 @@ def getTwoMovies(fmovie, fscore, rematch, userprof):
 				movies['2mat'] = movie2mat
 				return movies
 			else:
+				recurse -= 1 
+				return getTwoMovies(fmovie, fscore, rematch, userprof,recurse)
 				nomovie=True
 			
 	else:	
+
+		
 		randmovies = Movie.objects.filter(**fmovie).order_by('?')
 		
 		#print randtvshows
 		movie1=None
 		movie2=None
 		nomovie = True
+		
+		#TEMP
+		count = 0
 		for i in range(0,len(randmovies)-1):
+			#TEMP
+			count += 1
+			
 			movie1 = randmovies[i]
 			
 			havntused1 = False
@@ -451,6 +545,9 @@ def getTwoMovies(fmovie, fscore, rematch, userprof):
 								movies['1mat'] = movie1mat
 								movies['2'] = movie2
 								movies['2mat'] = movie2mat
+								
+								movies['count'] = count
+								
 								return movies
 							else:
 								#As didnt use the objects delete to not create unecessary data
@@ -463,6 +560,8 @@ def getTwoMovies(fmovie, fscore, rematch, userprof):
 						else:
 							nomovie = True
 	if nomovie == True:
+		recurse -= 1 
+		return getTwoMovies(fmovie, fscore, rematch, userprof,recurse)
 		return None
 	
 	movies = {}

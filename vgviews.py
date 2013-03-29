@@ -11,7 +11,29 @@ from django.shortcuts import redirect
 import Posters
 
 def VideoGameHandler(request):
-	return "Nope"
+	params= request.GET
+	
+	if 'vid' in params:
+		vid = params["vid"]
+		
+	userprofile = request.user.get_profile()
+	
+	v = VideoGame.objects.get(vid = vid)
+	
+	try:
+		vv = UserVideoGameScore.objects.get(vid = vid)
+	except:
+		vv = None
+	matchups = VideoGameMatchup.objects.filter(Q(winner=vid) | Q(loser=vid)).order_by('matchupid')
+	
+	context = {
+			'videogame': v,
+			'videogamemat':vv,
+			'matchups':matchups,
+	}
+	
+	message = render_to_response('videogame.html',context,context_instance=RequestContext(request))
+	return HttpResponse(message)
 	
 def VideoGameMatchHandler(request):
 	

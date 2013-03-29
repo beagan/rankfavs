@@ -66,9 +66,9 @@ max-width:450px;
 				</a>
 				<ul class="dropdown-menu">
 			<!-- dropdown menu links -->
-					<a href="/people/?cat=All Categories" id="filter">All Categories</a>
-			{% for i in categories %}
-					<a href="/people/?cat={{i.gid}}" id="filter">{{i.category}}</a>
+					<a href="/people/?p_tag=All Categories" id="filter">All Categories</a>
+			{% for i in p_tag %}
+					<a href="/people/?p_tag={{i.slug}}" id="filter">{{i.name}} ({{i.num_times}})</a>
 			{% endfor %}
 				</ul>
 			</div>
@@ -118,8 +118,8 @@ max-width:450px;
 {% if filters.gametype %}
 	{{filters.gametype}}<a href="/people/?remove=gametype" id="filter">X</a>
 {% endif %}
-{% if filters.cat %}
-	{{filters.cat}}<a href="/people/?remove=cat" id="filter">X</a>
+{% if filters.p_tag %}
+	{{filters.p_tag}}<a href="/people/?remove=p_tag" id="filter">X</a>
 {% endif %}
 {% if filters.list %}
 	{{filters.list}}<a href="/people/?remove=list" id="filter">X</a>
@@ -146,7 +146,7 @@ max-width:450px;
 <li>{{person1mat.numratings}}</li>
 <li>{{person1mat.neveruse}}</li>
 <li><a id="neveruse" href="/neveruseperson?neveruse={{person1.pid}}&otherperson={{person2.pid}}">Never Use</a>
-<li><a href="/people?lockedin={{person1.pid}}">Lock this person in</a>
+<li><a href="/people?p_lockedin={{person1.pid}}">Lock this person in</a>
 </div>
 
 <div class = "span3">
@@ -160,7 +160,7 @@ max-width:450px;
 <li>{{person2mat.numratings}}</li>
 <li>{{person2mat.neveruse}}</li>
 <li><a id ="neveruse" href="/neveruseperson?neveruse={{person2.pid}}&otherperson={{person1.pid}}">Never Use</a>
-<li><a href="/people?lockedin={{person2.pid}}">Lock this person in</a>
+<li><a href="/people?p_lockedin={{person2.pid}}">Lock this person in</a>
 </div>
 <div id ="prevvote">
 {% if ranks %}

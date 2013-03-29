@@ -2,12 +2,14 @@ from datetime import datetime, timedelta
 from rankyourfavs.rankfavs.models import *
 from django.template import Context, loader, RequestContext
 from django.shortcuts import render_to_response
+from django.db import connection
 import random
 import math
 import operator
 import Calculate
-from django.http import HttpResponse
+from django.http import HttpResponse,HttpResponseRedirect
 from django.db.models import Q
+from django.db.models import Avg
 from django.shortcuts import redirect
 import simplejson
 import os
@@ -17,24 +19,94 @@ from datetime import date
 from Queue import Queue
 import Posters
 import Filters
+from django import forms
+from django.forms import ModelForm, Textarea
+from django.contrib.auth.decorators import login_required
+from taggit.models import Tag
+
+class PersonForm(ModelForm):
+	def clean(self):
+		cleaned_data = self.cleaned_data
+		for k in self.cleaned_data:
+			if self.cleaned_data[k] == '':
+				cleaned_data[k] = None
+		return cleaned_data
+		
+	class Meta:
+		model = Person
+		exclude = ('sid','images','image_edit','twitter_verified','twitter_followers','twitter_followers_percentile','google_results',
+					'google_results_percentile','google_search_volume','google_search_volume_total','google_search_volume_percentile',
+					'bing_results','bing_results_percentile','popularity_rating')
+		widgets = 	{
+						'bio': Textarea(attrs={'cols': 80, 'rows': 20}),
+					}
+				
+
+
+
+
 
 def PersonSearchHandler(request):
-	
-	queries = request.GET.get('s').split()
-	qset1 =  reduce(operator.__or__, [Q(name__icontains=query) | Q(chickipedia_id__icontains=query) for query in queries])
-	
-	results = Person.objects.filter(qset1).distinct()
 	context = {}
-	context['results'] =  results
+	if 'ranked' in request.GET:
+		ranked = True
+	else:
+		ranked = False
+	if 'tag' in request.GET:
+		key = request.GET['tag']
+		if ranked:
+			f={}
+			f['pid__tags__slug'] = key
+			f['uid'] = request.user.get_profile()
+			sresults = UserPersonScore.objects.filter(**f).order_by('elorating').reverse()[:100]
+			context['sresults'] = sresults
+		else:
+			results = Person.objects.filter(Q(tags__slug__icontains=key))[:100]
+			context['results'] = results
+	#	print results
+	else:
+		queries = request.GET.get('s').split()
+		qset1 =  reduce(operator.__or__, [Q(name__icontains=query) | Q(chickipedia_id__icontains=query) for query in queries])
+			
+		results = Person.objects.filter(qset1).distinct()
+		context['results'] =  results
+		
 	
 	template = 'htmlresults.html'
-	
 	message = render_to_response(template, context,
 		context_instance=RequestContext(request))
 	return HttpResponse(message)
 	
 
 
+def PersonTagAverages(request):
+	
+	tags = Person.tags.most_common()
+	f={}
+	average={}
+	context={}
+	for i in tags:
+		f['pid__tags__slug'] = i.slug
+		f['uid'] = request.user.get_profile()
+		a = UserPersonScore.objects.filter(**f).order_by('elorating').reverse()[0:25].annotate()
+		print a
+		a = a.aggregate(Avg('elorating'))
+		if a['elorating__avg'] != None:
+			a = round(a['elorating__avg'])
+			average[i.name] = a
+	
+	sorted_x = sorted(average.iteritems(), key=operator.itemgetter(1),reverse=True)
+	#sorted_x = sorted_x.reverse()
+	print sorted_x
+	context['taglist'] = sorted_x
+	template='htmlresults.html'
+	message = render_to_response(template, context,
+		context_instance=RequestContext(request))
+	return HttpResponse(message)
+
+
+
+@login_required(login_url="/")
 def PersonMatchHandler(request):
 	year = ""
 	context = {}
@@ -70,26 +142,26 @@ def PersonMatchHandler(request):
 	topfperson = results['topfperson']
 	
 	
-	if 'search' in params:
+	if 'Food.objects.filter(tags__name__in=["delicious"])' in params:
 		request.session['filtdict']['search'] = Person.objects.get(pid=params['search']).name
 		request.session['search'] = params['search']
 		
 	##########################################
 	#TEMPORARY UNTIL TAGGING GETS IMPLEMENTED
-	if 'cat' in params:
-		if params['cat'] == 'All Categories':
-			request.session['cat'] = None
-		else:
-			request.session['cat'] = params['cat']	
-	cat=None	
-	if request.session.get('cat') != None:
-		cat = PersonCategory.objects.get(gid=request.session.get('cat'))
-		context['cat'] = cat.category
-		request.session['filtdict']['cat'] = context['cat']
-		
-		fperson['cats__category']=cat.category
-	else:
-		context['cat'] = "All Categories"
+#	if 'cat' in params:
+#		if params['cat'] == 'All Categories':
+#			request.session['cat'] = None
+#		else:
+#			request.session['cat'] = params['cat']	
+#	cat=None	
+#	if request.session.get('cat') != None:
+#		cat = PersonCategory.objects.get(gid=request.session.get('cat'))
+#		context['cat'] = PersonTag.objects.get(slug=request.session.get('cat'))
+#		request.session['filtdict']['cat'] = context['cat']
+#		fperson['tags__slug'] = request.session.get('cat')
+#		#fperson['cats__category']=cat.category
+#	else:
+#		context['cat'] = "All Categories"
 	#############################################
 	
 	rematch = request.session['filtvalues']['rematch']
@@ -112,7 +184,7 @@ def PersonMatchHandler(request):
 		elif request.session['filtvalues']['gametype'] == 'loser':
 			person1 = loser
 		person1mat = UserPersonScore.objects.get(uid=request.user.get_profile(),pid = person1)
-		results = getOnePerson(fperson, fscore, rematch, person1,request.user.get_profile())
+		results = getOnePerson(fperson, fscore, rematch, person1,request.user.get_profile(),25)
 		person2 = results['person']
 		person2mat = results['matchup']
 	elif 'p_lockedin' in request.session['filtvalues'] and request.session['filtvalues']['p_lockedin'] != None:
@@ -126,13 +198,13 @@ def PersonMatchHandler(request):
 		if close_matchup:
 			results = getCloseOnePerson(fperson,fscore,rematch,person1,person1mat,request.user.get_profile())
 		else:
-			results = getOnePerson(fperson, fscore, rematch, person1, request.user.get_profile())
+			results = getOnePerson(fperson, fscore, rematch, person1, request.user.get_profile(),25)
 		person2 = results['person']
 		person2mat = results['matchup']
 	else:
 		print request.session['filtvalues']
 		print "two people"
-		people = getTwoPeople(fperson,fscore,rematch,request.user.get_profile())		
+		people = getTwoPeople(fperson,fscore,rematch,request.user.get_profile(),25)		
 		if people == None:
 			person1 = None
 			person2 = None
@@ -151,11 +223,13 @@ def PersonMatchHandler(request):
 		#return HttpResponse("NO PEOPLE")
 	topfperson={}
 	
+	if 'popularity_rating__gte' in fperson:
+		del fperson['popularity_rating__gte']
 	
 	for i in fperson:
 		index = "pid__" + str(i)
 		topfperson[index] = fperson[i]
-	
+	print topfperson
 	top25 = UserPersonScore.objects.filter(uid=request.user.get_profile()).filter(**topfperson).order_by('elorating').reverse()
 	if (top25.count()>25):
 		top25 = top25[:25]
@@ -163,13 +237,21 @@ def PersonMatchHandler(request):
 	if prevvote:
 		context['ranks'] = ranks
 	
-	context['filters'] = request.session.get('filtdict')
+	#t1 = time.time()
 	
+	#for i in range(1,1000):
+	#	testtvshows = getTwoPeople(fperson,fscore,rematch,request.user.get_profile(),25)
+	#t2 = time.time()
+	
+	#print "1000 2 people was {}".format(t2-t1)
+	
+	
+	context['filters'] = request.session.get('filtdict')
 	context['person1'] = person1
 	context['person1mat'] = person1mat
 	context['person2'] = person2
 	context['person2mat'] = person2mat
-	context['categories'] = PersonCategory.objects.all()
+	context['p_tag'] = Person.tags.most_common()
 	context['lists'] = PersonList.objects.all()
 	context['peoplebar'] = True
 	
@@ -263,7 +345,7 @@ def NeverUsePersonHandler(request):
 		if 'rematch' in request.session['filtdict']:
 			del request.session['filtdict']['rematch']
 	
-	person2 = getOnePerson(fperson, fscore, rematch, person1,request.user.get_profile())
+	person2 = getOnePerson(fperson, fscore, rematch, person1,request.user.get_profile(),25)
 	print person2
 	if person2 == None:
 		return HttpRespone("No People")
@@ -310,17 +392,42 @@ def PersonEditHandler(request):
 	context = {}
 	if request.method == 'GET':
 		params = request.GET
-		print params
-	elif request.method == 'POST':
+	else:
 		params = request.POST
+		
 	if 'pid' in params:
 		pid = params['pid']
-	p = Person.objects.get(pid = pid)
-	context['person'] = p
-	context['dob'] = "{}/{}/{}".format(p.dob.year,p.dob.month,p.dob.day)
-	print context
-	message = render_to_response('personedit.html',context,context_instance=RequestContext(request))
-	return HttpResponse(message)	
+		p = Person.objects.get(pid = pid)
+	else:
+		p=None
+	
+	
+	if request.method == 'GET':
+		
+		params = request.GET
+		print params
+		context['person'] = p
+		context['dob'] = "{}/{}/{}".format(p.dob.year,p.dob.month,p.dob.day)
+		context['form'] = PersonForm(instance=p)
+		print context
+		message = render_to_response('personedit.html',context,context_instance=RequestContext(request))
+		return HttpResponse(message)
+		
+	elif request.method == 'POST':
+		#pid = request.POST['pid']
+		person = p#Person.objects.get(pid=pid)
+		params = request.POST
+		form = PersonForm(request.POST,instance=p)
+		print form.errors
+		if form.is_valid():
+			person = form.save()
+			person.save()
+			return HttpResponseRedirect('/person?pid=' + str(person.pid))
+		else:
+			print form.is_valid()
+			return HttpResponse()
+		
+
 
 
 def PersonEditSubmitHandler(request):
@@ -374,7 +481,7 @@ def PersonEditSubmitHandler(request):
 
 
 def TemporaryPersonListHandler(request):
-	persons = TemporaryPerson.objects.all()
+	persons = TemporaryPerson.objects.all().order_by('freeones_rank')[:100]
 	context={}
 	context['people'] = persons
 	
@@ -469,18 +576,25 @@ def TemporaryPersonEditSubmitHandler(request):
 		p = Person(name = temp.name,gender=temp.gender,imdb_id=temp.imdb_id,twitter=temp.twitter,wikipedia_link=temp.wikipedia_link,images=temp.images)
 		p.save()
 		temp.delete()
-		
+		if p.wikipedia_link != None:
+			getDOBandBiofromWikipedia(p.wikipedia_link)
+		#make thumbnail
 		new_id = p.pid
 		
 		src = "/Users/Jason/person/temp/" + str(old_id)
 		dst = "/Users/Jason/person/" + str(new_id)
-		
-		shutil.move(src,dst)
+		try:
+			shutil.move(src,dst)
+		except:
+			print "directory missing"
 		
 		src = "/Users/Jason/person/thumb/temp/" + str(old_id) + ".jpg"
 		dst = "/Users/Jason/person/thumb/" + str(new_id) + ".jpg"
 		
-		shutil.move(src,dst)
+		try:
+			shutil.move(src,dst)
+		except:
+			print "directory missing"
 		
 		###Delete old picture folder and transition to new picture folder based on id of the newly saved person		
 		
@@ -496,15 +610,23 @@ def TemporaryPersonEditSubmitHandler(request):
 	
 def RemoveTemporaryPersonHandler(request):
 	if request.method == "POST":
-		params = request.POST.getlist('temp')
-		print params
-		for i in params:
+		if 'removeall' in request.POST:
+			p = TemporaryPerson.objects.all()
+			for i in p:
+				i.delete()
+				dir = "/Users/Jason/person/temp/"+str(i.temp_id)+"/"
+				if os.path.exists(dir):
+					shutil.rmtree(dir)
+		else:
+			params = request.POST.getlist('temp')
+			print params
+			for i in params:
 
-			temp = TemporaryPerson.objects.get(temp_id=i)
-			temp.delete()
-			dir = "/Users/Jason/person/temp/"+str(temp.temp_id)+"/"
-			if 	os.path.exists(dir):
-				shutil.rmtree(dir)
+				temp = TemporaryPerson.objects.get(temp_id=i)
+				temp.delete()
+				dir = "/Users/Jason/person/temp/"+str(temp.temp_id)+"/"
+				if 	os.path.exists(dir):
+					shutil.rmtree(dir)
 	
 	url = "/addpersonqueue"
 	return redirect(url)
@@ -569,8 +691,15 @@ def RefreshPersonRanksHandler(request):
 	
 
 
-def getTwoPeople(fperson, fscore, rematch, userprof):
+def getTwoPeople(fperson, fscore, rematch, userprof,recurse):
 	#print "fperson {} fscore {}".format(fperson,fscore)
+	
+	r = int(round(math.log(random.uniform(1,10),10)*10))
+	fperson['popularity_rating__gte'] = r
+	print "pop rating threshold {}".format(r)
+	if recurse == 0:
+		return None
+	
 	if fscore != {}:
 		for i in fperson:
 			index = "pid__" + str(i)
@@ -657,9 +786,10 @@ def getTwoPeople(fperson, fscore, rematch, userprof):
 							noperson = True
 	
 	if noperson == True:
-		print person1
-		print person2
-		return None
+		recurse -= 1
+		return getTwoPeople(fperson, fscore, rematch, userprof,recurse)
+	
+	
 	
 	people = {}
 	people['1'] = person1
@@ -670,7 +800,18 @@ def getTwoPeople(fperson, fscore, rematch, userprof):
 	
 
 ###TO DO FILTER ON FSCORE
-def getOnePerson(fperson, fscore, rematch, person1,userprof):
+def getOnePerson(fperson, fscore, rematch, person1,userprof,recurse):
+	if recurse == 0:
+		return {'person':None,'matchup':None}
+	
+	r = int(round(math.log(random.uniform(1,10),10)*10))
+	fperson['popularity_rating__gte'] = r
+	print "pop rating threshold {}".format(r)
+	
+	
+	
+	print "rematch {}".format(rematch)
+	
 	if fscore != {}:
 		for i in fperson:
 			index = "pid__" + str(i)
@@ -719,7 +860,9 @@ def getOnePerson(fperson, fscore, rematch, person1,userprof):
 					noperson = True
 	
 	if noperson == True:
-		return {'person':None,'matchup':None}
+		recurse -= 1
+		return getOnePerson(fperson, fscore, rematch, person1,userprof,recurse)
+		#return {'person':None,'matchup':None}
 	
 	try:
 		person2mat = UserPersonScore.objects.get(pid=person2,uid=userprof)
@@ -748,6 +891,7 @@ def getCloseOnePerson(fperson, fscore, rematch, person1,person1mat,userprof):
 	person2 = None
 	noperson = True
 	print fscore
+	print rematch
 	for i in range(0,len(randpeople)):
 		person2 = randpeople[i].pid
 		person2mat = randpeople[i]
@@ -776,8 +920,6 @@ def getCloseOnePerson(fperson, fscore, rematch, person1,person1mat,userprof):
 	results['person'] = person2
 	results['matchup'] = person2mat
 	return {'person':person2,'matchup':person2mat}
-
-
 
 
 def PersonHandler(request):
@@ -892,7 +1034,7 @@ def RemovePersonHandler(request):
 				print "winner"
 				other = UserPersonScore.objects.get(pid=s.loser.pid,uid=s.uid)
 				
-				other.elorating += s.elo
+				other.elorating += s.w_elo
 				
 				other.losses -= 1
 				other.numratings -=1
@@ -901,7 +1043,7 @@ def RemovePersonHandler(request):
 			if s.loser == p:
 				print "loser"
 				other = UserPersonScore.objects.get(pid=s.winner.pid,uid=s.uid)
-				other.elorating -= s.elo
+				other.elorating -= s.l_elo
 				other.wins -= 1
 				other.numratings -= 1
 				

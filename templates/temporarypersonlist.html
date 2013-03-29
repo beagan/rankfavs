@@ -8,7 +8,7 @@
 	<div class="control-group">
 		<div class="controls">
 			<label class="checkbox">
-				<input name="temp" value="{{i.temp_id}}" type="checkbox"><img src="/static//person/temp/thumb/{{i.temp_id}}.jpg"/><a href="addentity/?temp_id={{i.temp_id}}">{{i.name}}</a>
+				<input name="temp" value="{{i.temp_id}}" type="checkbox"><img src="/static//person/temp/thumb/{{i.temp_id}}.jpg" width=80/><a href="addentity/?temp_id={{i.temp_id}}">{{i.name}}</a>
 			</label>
 		</div>
 	</div>
@@ -17,12 +17,59 @@
 {% endif %}
 	<div class="control-group">
 		<div class="controls">
+			<label class="checkbox">
+				<input name="removeall" value="removeall" type="checkbox">Remove all
+			</label>
+	<div class="control-group">
+		<div class="controls">
 			
-			<button type="submit" class="btn">Sign in</button>
+			<button type="submit" class="btn">Submit</button>
 		</div>
 	</div>
 	</fieldset>
 </form>
+
+<form class="form-hotizontal" action='/addbywikicat' method="post">{% csrf_token %}
+	<fieldset>
+		<div class="control-group">
+			<div class="textbox">
+				<label class="control-label" for="wiki_cat">Category Link</label>
+					<input name="wiki_cat" type="textbox"/>
+			</div>
+		</div>
+		
+		
+		<div class="control-group">
+			<div class="textbox">
+				<label class="control-label" for="tag">Tag Name</label>
+					<input name="tag" type="textbox"/>
+			</div>
+		</div>
+		
+		
+		<div class="control-group">
+			<div class="controls">
+
+				<button type="submit" class="btn">Submit</button>
+			</div>
+		</div>
+	</fieldset>
+</form>
+				
+				
+
+
+<script type="text/javascript">
+$(document).ready(function(){
+    $("img").each(function(){
+        var imgObj = $(this);
+        var img = new Image();
+        img.onerror=function(){ imgObj.attr('src','/static//person/placeholder-female.jpg'); }
+        img.src = imgObj.attr('src');
+    });
+});
+</script>
+
 <script>
 
 	    $("#watched").live('click', function(){

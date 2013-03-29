@@ -34,14 +34,42 @@ import Image
 import operator
 from rankyourfavs.rankfavs.models import *
 from datetime import date, datetime
-import Posters, Netflix, TVUtlities
+import Posters, Netflix, TVUtlities, Scraper
 import sys
 import freebase
 import movieviews
+import MovieUtilities
 from imdb import IMDb
 import re
 
 
+
+
+def unquotekey(key, encoding=None):
+    """
+    unquote a namespace key and turn it into a unicode string
+    """
+    valid_always = string.ascii_letters + string.digits
+    output = []
+    i = 0
+    while i < len(key):
+        if key[i] in valid_always:
+            output.append(key[i])
+            i += 1
+        elif key[i] in '_-' and i != 0 and i != len(key):
+            output.append(key[i])
+            i += 1
+        elif key[i] == '$' and i+4 < len(key):
+            # may raise ValueError if there are invalid characters
+            output.append(unichr(int(key[i+1:i+5],16)))
+            i += 5
+        else:
+            raise ValueError, "unquote key saw invalid character '%s' at position %d" % (key[i], i)
+    ustr = u''.join(output)
+   
+    if encoding is None:
+        return ustr
+    return ustr.encode(encoding)
 
 ##
 # Removes HTML or XML character references and entities from a text string.
@@ -127,6 +155,7 @@ def HomeHandler(request,template="index.html",extra_context=None):
 	params= request.GET	
 #	today = date.today()
 	context = {}
+	#freeOnesScraper()
 	#TVUtlities.getPosters()
  	#netflix(60025061)
 	#netflix(60000523)
@@ -143,10 +172,18 @@ def HomeHandler(request,template="index.html",extra_context=None):
 	#peopleInformationGetter()
 	#baseballAlmanac()
 	persons = Person.objects.all()
-	changed = 1
-	for i in persons:
-
-		if False:# i.bio != None:
+	changed = 0
+	if False:
+	#for i in persons:
+		if False:#i.wikipedia_link != None:
+			try:
+				i.wikipedia_link = unquotekey(i.wikipedia_link)
+				changed +=1
+				i.save()
+			except:
+				print "ERROR"
+			
+		if i.bio != None:
 			i.bio = unescape(i.bio).encode("utf-8")
 		
 			try:
@@ -156,19 +193,23 @@ def HomeHandler(request,template="index.html",extra_context=None):
 				changed += 1
 			
 			i.save()
-		if i.wikipedia_link != None and i.bio == None:
+		if False:#i.wikipedia_link != None and i.bio == None:
 			
 			results = getDOBandBiofromWikipedia(i.wikipedia_link)
 			s_dob = results['dob']
 			bio = results['bio']
 			redirect = results['redirect']
 			if len(bio)>1:
+				if redirect != None:
+					oldwiki = i.wikipedia_link
+					i.wikipedia_link = redirect
+					#print "Changed to {} to this {}".format(oldwiki,redirect)
 				i.bio = bio
-				oldwiki = i.wikipedia_link
-				i.wikipedia_link = redirect
+				changed +=1
 				i.save()
-				print "Changed to {} to this {}".format(oldwiki,redirect)
-			if s_dob != 0 and s_dob != "" and len(s_dob)>1:
+				
+			"""if s_dob != 0 and s_dob != "" and len(s_dob)>1:
+				
 				try:
 					dob = datetime.strptime(s_dob,"%Y-%m-%d")
 				except:
@@ -177,20 +218,30 @@ def HomeHandler(request,template="index.html",extra_context=None):
 						s_dob = s_dob.replace(' ','')
 					except:
 						break
+				
 				stored_dob = datetime.strptime(str(i.dob),"%Y-%m-%d")
 				if dob == stored_dob:
 					print "MATCH IN DA HOUSE"
 				else:
 					print "WE GOT AN IMPOSTER"
-					print "stored {} wiki {} name {} id {}".format(i.dob,dob,i.name,i.pid)
+					#print "stored {} wiki {} name {} id {}".format(i.dob,dob,i.name,i.pid)
 					i.dob = s_dob
 					changed += 1
 					i.save()
 					print changed
-	print changed
-	
+					"""
 					
-	#getProfessions()
+	print "changed {}".format(changed)
+	
+	#getTwitterInformation()
+	#getSearchAmounts()
+	#getPersonRanks()
+	#getPersonRankings()
+	
+	#getExtendedMovieInfo()
+	#getMovieRankings()
+	#getTagProfessions()
+	#getNationality()
 	#getThumbs()
 	#recalculateELO()
 	#processList()
@@ -201,7 +252,7 @@ def HomeHandler(request,template="index.html",extra_context=None):
 	#getMissingNames()
 	
 	#getWikiIdsFromCategoryName("American_Idol_participants")
-	#getWikiIdsFromCategoryName("Survivor_contestants")
+	#getWikiIdsFromCategoryName("Olympic_gymnasts_of_the_United_States","Gymnast")
 	#getMobi()
 	if request.user.is_authenticated():
 		return movieviews.MovieMatchHandler(request)
@@ -571,6 +622,7 @@ def PickThumbnailHandler(request):
 	return HttpResponse(message)
 
 
+#JUST WORKS FOR PERSON
 def PickThumbnailReturnHandler(request):
 	if request.method == 'POST':
 		
@@ -580,14 +632,16 @@ def PickThumbnailReturnHandler(request):
 		pic_id = int(params['pic_id'])
 		dir = "/Users/Jason/person/" + str(pid) + "/"
 		Posters.makeThumbByPic(pid,pic_id)
-		os.rename(dir+str(pic_id)+".jpg",dir+"tmp.jpg")
-		os.rename(dir+"1.jpg",dir+str(pic_id)+".jpg")
-		os.rename(dir+"tmp.jpg",dir+"1.jpg")
+		if pic_id != 1:
+			os.rename(dir+str(pic_id)+".jpg",dir+"tmp.jpg")
+			os.rename(dir+"1.jpg",dir+str(pic_id)+".jpg")
+			os.rename(dir+"tmp.jpg",dir+"1.jpg")
 		
-	url = '/person?id=' + str(pid)
+	url = '/person?pid=' + str(pid)
 	return redirect(url)
 
 
+#JUST WORKS FOR PERSON
 def ProcessNewPicsHandler(request):
 	
 	
@@ -700,56 +754,6 @@ def ProcessNewPicsHandler(request):
 	return redirect(url)
 
 
-def Person2Handler(request):
-	try:
-		d = PersonCategory.objects.get(category="Director")
-	except:
-		d = PersonCategory.objects.create(category="Director")
-	try:
-		c = PersonCategory.objects.get(category="Actor")
-	except:
-		c = PersonCategory.objects.create(category="Actor")
-	movs = Movie.objects.all()
-	for m in movs:
-		for p in m.director.all():
-			d.members.add(p)
-		for p in m.cast.all():
-			c.members.add(p)
-	c.save()
-	d.save()
-	
-	people = Person.objects.all()
-	
-	for person in people:
-		result = freebase.mqlread({ "id": None, "key": [{ "namespace": "/authority/netflix/role", "value": str(person.netflix_id) }], "ns0:key": [{}] })
-		if result != None:
-			for i in result['ns0:key']:
-				if i['namespace'] == '/wikipedia/en':
-					person.wikipedia_link = str(i['value'])
-					break
-			for i in result['ns0:key']:
-				if i['namespace'] == '/authority/imdb/name':
-					person.imdb_id = int(i['value'].split('nm')[1])
-				if i['namespace'] == '/authority/tvrage/person':
-					person.tvrage_id = int(i['value'])
-				if i['namespace'] == '/base/chickipedia/chickipedia_id':
-					person.chickipedia_id = str(i['value'])
-		person.save()
-			
-			
-	context = {
-	}
-	
-	
-	
-	#return_str = render_block_to_string('subtemplate.html', 'results', context)
-	template = 'subtemplate.html'
-	
-	message = render_to_response('subtemplate.html', context)
-	return HttpResponse(message)
-
-
-
 def getMobi():
 	for offset in range(400,1700,50):
 		url = "http://www.mobygames.com/browse/games/xbox360/offset," + str(offset) + "/so,0a/list-games/"
@@ -809,8 +813,153 @@ def getMobi():
 						True
 						#print tostring(td)
 
+
 def netflix(netflix, id):
 	return netflix.catalog.getTitle("http://api.netflix.com/catalog/titles/movies/" + str(id))
+
+
+def getTwitterInformation():
+	persons = Person.objects.exclude(twitter=None)
+	count = 0
+	list = ""
+	for i in persons:
+		list += i.twitter + ','
+		count +=1
+		if count == 95:
+			data = Scraper.getTwitterInformation(list)
+			#print data
+			for t in data:
+				try:
+					
+					p = Person.objects.get(twitter__iexact=t)
+					p.twitter = t
+					p.twitter_id = data[t]['id']
+					p.twitter_followers = data[t]['followers_count']
+					p.verified = data[t]['verified']
+					p.save()
+				except:
+					print t
+					print "not there"
+			list = ""
+			count = 0
+
+
+def getPersonRanks():
+	persons = Person.objects.all().order_by('google_search_volume_total').reverse()
+	personcount = Person.objects.all().count()
+	personsleft = personcount
+	for i in persons:
+		if i.google_search_volume_total == 0:
+			i.google_search_volume_percentile = 0
+		else:
+			i.google_search_volume_percentile = int((float(personsleft)/float(personcount))*100)
+		personsleft -= 1
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()
+	persons = Person.objects.all().order_by('google_results').reverse()
+	
+	personsleft = personcount
+	for i in persons:
+		i.google_results_percentile = int((float(personsleft)/float(personcount))*100)
+		personsleft -= 1
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()
+			
+	persons = Person.objects.all().order_by('bing_results').reverse()
+	personsleft = personcount
+	for i in persons:
+		i.bing_results_percentile = int((float(personsleft)/float(personcount))*100)
+		personsleft -= 1
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()
+	persons = Person.objects.all().order_by('twitter_followers').reverse()
+	personsleft = personcount
+	for i in persons:
+		if i.twitter_followers == 0:
+			i.twitter_followers_percentile = 0
+		else:
+			i.twitter_followers_percentile = int((float(personsleft)/float(personcount))*100)
+		personsleft -= 1
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()
+
+
+def getPersonRankings():
+	persons = Person.objects.all()
+	for i in persons:
+		i.popularity_rating = int(round(float((i.bing_results_percentile + i.google_results_percentile + i.google_search_volume_percentile+i.twitter_followers_percentile)/4)/10))
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()	
+
+
+#@transaction.commit_manually
+def getSearchAmounts():
+	persons = Person.objects.all()
+	for i in persons:
+		print i.name
+		if False:#i.google_search_volume_total == 0:
+			g_volume = Scraper.getGoogleSearchVolumeTotal(i.name)
+			print g_volume
+			if g_volume != None:
+				i.google_search_volume_total = g_volume
+				try:
+					i.save()
+				except:
+					transaction.rollback()
+				else:
+					transaction.commit()
+		if False:#i.google_search_volume == 0:
+			print "trying"
+			g_volume = Scraper.getGoogleSearchVolume(i.name)
+			print g_volume
+			if g_volume != None:
+				i.google_search_volume = g_volume
+				try:
+					i.save()
+				except:
+					transaction.rollback()
+				else:
+					transaction.commit()
+		if i.google_results == 0:
+			g_pop = Scraper.getGooglePopularity(i.name)
+			if g_pop != None:
+				i.google_results = g_pop
+				try:
+					i.save()
+				except:
+					transaction.rollback()
+				else:
+					transaction.commit()		
+		if i.bing_results == 0:
+			b_pop = Scraper.getBingPopularity(i.name)
+			if b_pop != None:
+				i.bing_results = b_pop
+				try:
+					i.save()
+				except:
+					transaction.rollback()
+				else:
+					transaction.commit()
 
 
 def storeNetflixRatings(userprof):
@@ -1265,66 +1414,32 @@ def getFreebaseData(source,value):
 		if 'http' in value:
 			value = value.split('/name/')[1].split('/')[0]
 			print value
+			
 		return freebase.mqlread({"key": [{ "namespace": "/authority/imdb/name", "value": value}], "name": None, "/people/person/place_of_birth": None, "/people/person/nationality": [{}], "/people/person/date_of_birth": None, "/people/person/gender": None, "ns0:key": [{}]})
 	#make sure it was quotekey
 	if source == 'baseballalmanac':
 		result = freebase.mqlread({"key": [{ "namespace": "/source/baseball_almanac/players", "value": value}], "name": None, "/people/person/place_of_birth": None, "/people/person/nationality": [{}], "/people/person/date_of_birth": None, "/people/person/profession": [{}], "/people/person/gender": None, "ns0:key": [{}] })
 	###add checks to see if empty????
 	if source == 'name':
-		return freebase.mqlread({"name": value, "/people/person/place_of_birth": None, "/people/person/nationality": [{}], "/people/person/date_of_birth": None, "/people/person/profession": [{}], "/people/person/gender": None, "ns0:key": [{}] })
+		#changed nationality to have None instead of [{}]
+		return freebase.mqlread({"name": value, "/people/person/place_of_birth": None, "/people/person/nationality": [{}], "/people/person/date_of_birth": None, "/people/person/profession": [{}], "/people/person/gender": None, "ns0:key": [{}], "limit":1})
 		
 
 
-def getWikiIdsFromCategoryName(name):
-	ids = []
-	cpurl = "http://en.wikipedia.org/w/api.php?format=xml&action=query&list=categorymembers&cmtitle=Category:" + name +"&cmlimit=500&cmdir=desc"
-	
-	headers = {
-		'User-Agent' : "Magic Browser",
-		'Connection':	'Keep-Alive',
-	}
-	data=""
-	req = urllib2.Request(cpurl, data, headers)
-	#urlsvisited.append(cpurl)
-	f = urllib2.urlopen(req)
-	htmlSource = f.read()
-	f.close()
-	tree = etree.fromstring(htmlSource)
-	
-	print etree.tostring(tree,pretty_print=True)
-	for query in tree:
-		for categorymembers in query:
-			for elem in categorymembers:
-				ids.append(elem.get("pageid"))
-	print ids
-	try:
-		li = PersonList.objects.get(list="American Idol Contestants")
-	except:
-		li = PersonList.objects.create(list="American Idol Contestants")
-	
-	for i in ids:
-		freebase = getFreebaseData('wikipedia',i)
-		addTemporaryFromFreebase(freebase)
-		#p = addByWikiID(i)
-#		person = {}
-#		result = freebase.mqlread({"key": [{ "namespace": "/wikipedia/en_id", "value": i}], "name": None, "/people/person/place_of_birth": None, "/people/person/nationality": [{}], "/people/person/date_of_birth": None, "/people/person/gender": None, "ns0:key": [{}]})
-#		if result != None:
-#			for i in result['ns0:key']:
-#				if i['namespace'] == '/wikipedia/en':
-#					person['wikipedia_link'] = str(i['value'])
-#					break
-#			try:
-#				p = Person.objects.get(wikipedia_link = person['wikipedia_link'])
-#				li.members.add(p)
-#			except:
-#				print "no person"
-#		if p != None:
-#			li.members.add(p)
-#	li.save()
+def AddByWikiCategory(request):
+	if request.method == "POST":
+		params = request.POST
 		
+		try:
+			url = re.search(r'Category:(.*)',params['wiki_cat']).group(1)
+		except:
+			url = params['wiki_cat']
 		
-	
-	
+		tag = params['tag']
+		
+		getWikiIdsFromCategoryName(url,tag)
+		url = "/addpersonqueue"
+		return redirect(url)
 
 
 def addByMobiwData(data):
@@ -1349,7 +1464,6 @@ def addByMobiwData(data):
 		
 				print "Unexpected error:", sys.exc_info()
 				print "dup"
-
 
 
 def addTemporaryFromFreebase(freebase):
@@ -1382,6 +1496,8 @@ def addTemporaryFromFreebase(freebase):
 				person['twitter'] = str(i['value'])
 			if i['namespace'] == '/base/chickipedia/chickipedia_id':
 				person['chickipedia_id'] = str(i['value'])
+			if i['namespace'] == '/wikipedia/en_id':
+				person['wikipedia_id'] = str(i['value'])
 	print "links {} person is {}".format(real,person)
 	
 	#If at least one link was found continue adding
@@ -1400,10 +1516,13 @@ def addTemporaryFromFreebase(freebase):
 				p.imdb_id = person['imdb_id']
 			if 'wikipedia_link' in person:
 				p.wikipedia_link = person['wikipedia_link']
+			if 'wikipedia_id' in person:
+				p.wikipedia_id = person['wikipedia_id']
 			if 'chickipedia_id' in person:
 				p.chickipedia_id = person['chickipedia_id']
 			if 'twitter' in person:
 				p.twitter = person['twitter']
+			
 			p.save()
 			return p
 		except:
@@ -1641,8 +1760,177 @@ def addByTwitter(id):
 	return None
 
 
+def getMovieRankings():
+	movies = Movie.objects.all().order_by('imdb_votes').reverse()
+	moviecount = Movie.objects.all().count()
+	moviesleft = moviecount
+	for i in movies:
+		
+		rating_average = float((i.imdb_rating+i.moviedb_rating+i.rottentomatoes_critics_score+i.rottentomatoes_audience_score))/4
+		i.outside_ratings_avg = rating_average
+		
+		if i.imdb_votes == 0:
+			i.imdb_votes_percentile = 0
+		else:
+			i.imdb_votes_percentile = int((float(moviesleft)/float(moviecount))*100)
+		moviesleft -= 1
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()
+	movies = Movie.objects.all().order_by('moviedb_popularity').reverse()
+	moviecount = Movie.objects.all().count()
+	moviesleft = moviecount
+	for i in movies:
+		if i.moviedb_popularity == 0:
+			i.moviedb_popularity_percentile = 0
+		else:
+			i.moviedb_popularity_percentile = int((float(moviesleft)/float(moviecount))*100)
+		moviesleft -= 1
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()
+	movies = Movie.objects.all().order_by('moviedb_votes').reverse()
+	moviecount = Movie.objects.all().count()
+	moviesleft = moviecount
+	for i in movies:
+		if i.moviedb_votes == 0:
+			i.moviedb_votes_percentile = 0
+		else:
+			i.moviedb_votes_percentile = int((float(moviesleft)/float(moviecount))*100)
+		moviesleft -= 1
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()
+	movies = Movie.objects.all().order_by('budget').reverse()
+	moviecount = Movie.objects.all().count()
+	moviesleft = moviecount
+	for i in movies:
+		if i.revenue == 0:
+			i.revenue_percentile = 0
+		else:
+			i.revenue_percentile = int((float(moviesleft)/float(moviecount))*100)
+		moviesleft -= 1
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()
+			
+	movies = Movie.objects.all().order_by('outside_ratings_avg').reverse()
+	moviecount = Movie.objects.all().count()
+	moviesleft = moviecount
+	for i in movies:
+		if i.outside_ratings_avg == 0:
+			i.rating_metric = 0
+		else:
+			i.rating_metric = int((float(moviesleft)/float(moviecount))*10)
+		moviesleft -= 1
+		
+		percentile_average = float(i.imdb_votes_percentile + i.moviedb_popularity_percentile + i.moviedb_votes_percentile+i.revenue_percentile)/4
+		i.popularity_metric = int(round(percentile_average/10))
+		
+		try:
+			print "{} {} {}".format(i.title, percentile_average, i.rating_metric)
+		except:
+			print "unicode"
+		
+		try:
+			i.save()
+		except:
+			transaction.rollback()
+		else:
+			transaction.commit()	
+
+
+def getExtendedMovieInfo():
+	movies = Movie.objects.all()
+	
+	for i in movies:
+		
+		if i.moviedb_id == None:
+			d = MovieUtilities.getMovieDBInfo(i.imdb_id)
+			print d
+			if 'id' in d:
+				i.moviedb_id = d['id']
+			if 'revenue' in d:
+				i.revenue = d['revenue']
+			if 'budget' in d:
+				i.budget = d['budget']
+			if 'runtime' in d:
+				i.runtime = d['runtime']
+			if 'release_date' in d:
+				i.release_date = d['release_date']
+			if 'popularity' in d:
+				print d['popularity']
+				print int(round(d['popularity']))
+				i.moviedb_pop = int(round(d['popularity']*1000))
+			if 'vote_count' in d:
+				i.moviedb_votes = d['vote_count']
+			if 'vote_average' in d:
+				i.moviedb_rating = int(float(d['vote_average'])*10)
+			if 'genres' in d:
+				for g in d['genres']:
+					i.tags.add(g['name'])
+					t = MovieTag.objects.get(name=g['name'])
+					t.type = "Genre"
+					t.save()
+		if i.imdb_rating == None:
+			d = MovieUtilities.getIMdBMovieInfo(i.imdb_id)
+			print d
+			if 'data' in d:
+				data = d['data']
+				if 'certificate' in data:
+					i.mpaa_rating = data['certificate']['certificate']
+				if 'rating' in data:
+					i.imdb_rating = int(float(data['rating'])*10)
+				if 'numvotes' in data:
+					i.imdb_votes = int(data['numvotes'])
+				if 'tagline' in data:
+					i.tagline = data['tagline']
+				if 'type' in data:
+					i.movie_type = data['type']
+				try:
+					i.save()
+				except:
+					transaction.rollback()
+				else:
+					transaction.commit()
+			else:
+				break
+		if i.rottentomatoes_id == None:
+			d = MovieUtilities.getRottenTomatoesMovieInfo(i.imdb_id)
+			print d
+			if 'id' in d:
+				i.rottentomatoes_id = d['id']
+			if 'ratings' in d:
+				i.rottentomatoes_audience_score = d['ratings']['audience_score']
+				i.rottentomatoes_critics_score = d['ratings']['critics_score']
+			if 'studio' in d:
+				i.tags.add(d['studio'])
+				t = MovieTag.objects.get(name=d['studio'])
+				t.type = "Studio"
+				t.save()
+			try:
+				i.save()
+			except:
+				transaction.rollback()
+			else:
+				transaction.commit()
+				
+
+
 def addByWikiID(data):
-	im = id
+	id = data
 	result = freebase.mqlread({"key": [{ "namespace": "/wikipedia/en_id", "value": id}], "name": None, "/people/person/place_of_birth": None, "/people/person/nationality": [{}], "/people/person/date_of_birth": None, "/people/person/gender": None, "ns0:key": [{}]})
 	real = 0
 	person = {}
@@ -1736,7 +2024,7 @@ def getDOBandBiofromWikipedia(wiki_link):
 	}
 	#cpurl = urllib.urlencode(cpurl)
 	data=""
-	req = urllib2.Request(cpurl, data, headers)
+	req = urllib2.Request(cpurl.encode('utf-8'), data, headers)
 	#urlsvisited.append(cpurl)
 	f = urllib2.urlopen(req)
 	htmlSource = f.read()
@@ -1756,10 +2044,11 @@ def getDOBandBiofromWikipedia(wiki_link):
 	#print len(htmlSource.split('(<span class=\"bday\">'))
 	if len(htmlSource.split('<p><b>'))>1:
 		bio = htmlSource.split('<p><b>')[1].split('<\/p>')[0].replace('\/','/').replace("\\\"","\"")
-
+		
 		bio = re.sub('<[^<]+?>', '', bio)
 		bio = re.sub('\[\d\]','',bio)
-		bio = unescape(bio)
+		i.bio = unescape(i.bio).encode("utf-8")
+	
 		try:
 			bio = bio.decode('unicode-escape')
 		except:
@@ -1789,7 +2078,6 @@ def processIMDbList(lnk):
 			addByIMDb(i[1])
 	
 	
-
 
 
 def addByIMDb(id):
@@ -1872,7 +2160,6 @@ def addByIMDb(id):
 				print len(person)
 				print "dup"
 	return True
-
 
 
 def addByName(name):
@@ -1969,14 +2256,12 @@ def addByName(name):
 def processList():
 	file = "/Users/Jason/rankyourfavs/2011maximhot100.txt"
 	
-	
-	
 	l = csv.reader(open(file, 'rb'), delimiter='	')
-	try:
-		li = PersonList.objects.get(list="2011 Maxim Hot 100")
-	except:
-		li = PersonList(list="2011 Maxim Hot 100")
-		li.save()
+#	try:
+		#li = PersonList.objects.get(list="2011 Maxim Hot 100")
+#	except:
+		#li = PersonList(list="2011 Maxim Hot 100")
+		#li.save()
 	count = 0
 	for i in l:
 		name = i[0].split('. ')[1]
@@ -2029,7 +2314,101 @@ def getMissingNames():
 		except:
 			addByTwitter(value)
 
-			
+
+def getNationality():
+	
+	#"/people/person/nationality"
+	#"/people/person/place_of_birth"
+	#"/people/person/ethnicity"
+	nationalities = {}
+	people = Person.objects.all()
+	
+	csvfile = open('/Users/Jason/rankyourfavs/rankfavs/cianat2012.csv', 'rb')
+	dialect = csv.Sniffer().sniff(csvfile.read(1024))
+	csvfile.seek(0)
+	reader= csv.reader(csvfile,dialect)
+	convert = {}
+	for row in reader:
+		r = row
+		if len(r)>0:
+			t = r[0].strip('\t')
+			if 'noun' in t:
+				r = r
+			elif 'adjective' in t:
+				convert[prevcountry] = t.split('adjective: ')[1]
+			else:
+				prevcountry = t	
+	for person in people:
+		if person.chickipedia_id != None:
+			result = freebase.mqlread({"/people/person/place_of_birth": [{}],"/people/person/ethnicity": [{}],"/people/person/nationality": [{}], "/people/person/profession": [{}], "key": [{ "namespace": "/base/chickipedia/chickipedia_id", "value": person.chickipedia_id}]})
+		elif person.imdb_id != None:
+			imdb_id = 'nm' + str(person.imdb_id).zfill(7)
+			result = freebase.mqlread({"/people/person/place_of_birth": [{}],"/people/person/ethnicity": [{}],"/people/person/nationality": [{}], "/people/person/profession": [{}], "key": [{ "namespace": "/authority/imdb/name", "value": imdb_id}]})
+		elif person.sid != None:
+			if person.sid.almanac_id != None:
+				result = freebase.mqlread({"/people/person/place_of_birth": [{}],"/people/person/ethnicity": [{}],"/people/person/nationality": [{}], "/people/person/profession": [{}],  "key": [{ "namespace": "/source/baseball_almanac/players", "value": person.sid.almanac_id}]})
+			elif person.sid.sportsdb_id != None:
+				print person.sid.sportsdb_id
+			else:
+				print "NOTHING"
+		else:
+			print "NOTHING"
+		
+		if result != None:
+			for i in result['/people/person/nationality']:
+				try:
+					print convert[i['name']]
+					person.tags.add(convert[i['name']])
+				except:
+					print "Not Present"
+				if i['name'] not in nationalities:
+					nationalities[i['name']] = 1 
+				else:	
+					nationalities[i['name']] += 1 
+		person.save()
+	print nationalities
+
+		
+def getTagProfessions():
+	d = {"Actor":['Actor','Character actor','Film actress','Voice actor','Theater Actress'],"Adult Actor": ['Pornographic actor'], "Adult Model":['Adult model','Nude Glamour Model','Pin-up girl','Fetish model','Gravure idol','Neo-Burlesque'],"Artist": ['Painter','Artist' ,'Tattoo artist','Makeup Artist','Cartoonist','Sculptor'], "Athlete":['Baseball player','Basketball player','American football player','Golfer','Soccer Player','Tennis player','Alpine Skier','Athlete','Bodybuilder','Figure Skater','Gymnast','Ice skating','Martial artist','Mixed Martial Artist','Professional Boxer','Softball Player','Swimmer','Wrestler','Martial Artist','Ice dancer'],"Baseball Player": ['Baseball player'],"Basketball Player":['Basketball player'],"American Football Player": ['American football player'],"Golfer": ['Golfer'],"Soccer Player":['Soccer Player'],"Tennis Player":['Tennis player'],"Olympian":['Alpine skier','Figure Skater','Gymnast','Ice Skating','Swimmer','Ice Dancer'],"Businessperson":['Businessperson','Entrepreneur','Philanthropist','Spokesman','Chief Executive Officer','Real estate developer'],"Chef":['Chef','Cook','TV chef'],"Coach":['Manager','Coach','Coaching'],"Comedian":['Comedian','Stand-up comedian','Humorist'],"Dancer":['Ballroom Dancer','Choreographer','Dance','Dancer','Exotic dancer','Showgirl','Stripper'],"Director":['Film Director','Music video director','Television Director','Theatre Director'],"Fashion Designer":['Costume Designer','Designer','Fashion Designer'],"Humanitarian":['Activism','Humanitarian','philantropist','Political activist','Social activist'],"Model":['Supermodel','Art Model','Fashion Model','Model','Child model'],"Supermodel":['Supermodel'],"Musician":['Bassist','Composer','Drummer','Fiddler','Guitarist','Keyboard player','Multi-instrumentalist','Musician','Pianist','Playback singer','Rapper','Rapping','Singer-songwriter','Singer','Violinist','Jazz Pianist','Backing vocalist','Film Score Composer','Disc jockey'],"Photographer":['Photographer','Photojournalist'],"Producer":['Producer','Film Producer','Record producer','Television Producer','Hip hop production'],"Racecar Driver":['Racecar driver'],"Royalty":['Duchess','Princess','First Lady'],"TV Personality":['Announcer','Commentator','Host','News Presenter','Newscaster','Presenter','Radio personality','Reporter','Sports commentator','Talk show host','Television Show Host','TV Anchor','TV Journalist','TV Personality','VJ','Broadcaster','Game Show Host'],"Writer":['Author','Blogger','Columnist','Journalist','Novelist','Playwright','Poet','Screenwriter','Writer','Film critic','Lyricist','Songwriter']}
+	people = Person.objects.all()
+	profs={}
+	count = 1
+	for person in people:
+		count +=1
+		print count
+		if count>-1:
+			if person.chickipedia_id != None:
+				result = freebase.mqlread({"/people/person/profession": [{}], "key": [{ "namespace": "/base/chickipedia/chickipedia_id", "value": person.chickipedia_id}]})
+			elif person.imdb_id != None:
+				imdb_id = 'nm' + str(person.imdb_id).zfill(7)
+				result = freebase.mqlread({"/people/person/profession": [{}], "key": [{ "namespace": "/authority/imdb/name", "value": imdb_id}]})
+			elif person.sid != None:
+				if person.sid.almanac_id != None:
+					result = freebase.mqlread({"/people/person/profession": [{}], "key": [{ "namespace": "/source/baseball_almanac/players", "value": person.sid.almanac_id}]})
+				elif person.sid.sportsdb_id != None:
+					print person.sid.sportsdb_id
+				else:
+					print "NOTHING"
+			else:
+				print "NOTHING"
+			#result = freebase.mqlread({"name": None, "/people/person/place_of_birth": None, "/people/person/nationality": [{}], "/people/person/date_of_birth": None, "/people/person/profession": [{}], "/people/person/gender": None, "key": [{ "namespace": "/base/chickipedia/chickipedia_id", "value": person.chickipedia_id}], "ns0:key": [{}] })
+			#print result
+			#print result['/people/person/date_of_birth']
+			#print result['/people/person/profession']
+			if result != None:
+				for i in result['/people/person/profession']:
+					#print i['name']
+					for entry in d:
+						if i['name'] in d[entry]:
+							print i['name']
+							person.tags.add(entry)
+			person.save()
+	print profs
+	sorted_x = sorted(profs.iteritems(), key=operator.itemgetter(1))
+	print sorted_x
+
+		
 def getProfessions():
 	
 	try:
@@ -2440,6 +2819,43 @@ def peopleInformationGetter():
 		p.save()
 
 
+def getTagTypes():
+	d = {"Actor":['Actor','Character actor','Film actress','Voice actor','Theater Actress'],"Adult Actor": ['Pornographic actor'], "Adult Model":['Adult model','Nude Glamour Model','Pin-up girl','Fetish model','Gravure idol','Neo-Burlesque'],"Artist": ['Painter','Artist' ,'Tattoo artist','Makeup Artist','Cartoonist','Sculptor'], "Athlete":['Baseball player','Basketball player','American football player','Golfer','Soccer Player','Tennis player','Alpine Skier','Athlete','Bodybuilder','Figure Skater','Gymnast','Ice skating','Martial artist','Mixed Martial Artist','Professional Boxer','Softball Player','Swimmer','Wrestler','Martial Artist','Ice dancer'],"Baseball Player": ['Baseball player'],"Basketball Player":['Basketball player'],"American Football Player": ['American football player'],"Golfer": ['Golfer'],"Soccer Player":['Soccer Player'],"Tennis Player":['Tennis player'],"Olympian":['Alpine skier','Figure Skater','Gymnast','Ice Skating','Swimmer','Ice Dancer'],"Businessperson":['Businessperson','Entrepreneur','Philanthropist','Spokesman','Chief Executive Officer','Real estate developer'],"Chef":['Chef','Cook','TV chef'],"Coach":['Manager','Coach','Coaching'],"Comedian":['Comedian','Stand-up comedian','Humorist'],"Dancer":['Ballroom Dancer','Choreographer','Dance','Dancer','Exotic dancer','Showgirl','Stripper'],"Director":['Film Director','Music video director','Television Director','Theatre Director'],"Fashion Designer":['Costume Designer','Designer','Fashion Designer'],"Humanitarian":['Activism','Humanitarian','philantropist','Political activist','Social activist'],"Model":['Supermodel','Art Model','Fashion Model','Model','Child model'],"Supermodel":['Supermodel'],"Musician":['Bassist','Composer','Drummer','Fiddler','Guitarist','Keyboard player','Multi-instrumentalist','Musician','Pianist','Playback singer','Rapper','Rapping','Singer-songwriter','Singer','Violinist','Jazz Pianist','Backing vocalist','Film Score Composer','Disc jockey'],"Photographer":['Photographer','Photojournalist'],"Producer":['Producer','Film Producer','Record producer','Television Producer','Hip hop production'],"Racecar Driver":['Racecar driver'],"Royalty":['Duchess','Princess','First Lady'],"TV Personality":['Announcer','Commentator','Host','News Presenter','Newscaster','Presenter','Radio personality','Reporter','Sports commentator','Talk show host','Television Show Host','TV Anchor','TV Journalist','TV Personality','VJ','Broadcaster','Game Show Host'],"Writer":['Author','Blogger','Columnist','Journalist','Novelist','Playwright','Poet','Screenwriter','Writer','Film critic','Lyricist','Songwriter']}
+	for i in d:
+		print i
+		t = PersonTag.objects.get(name=i)
+		t.type = "Profession"
+		t.save()
+	
+	
+	nationalities = {}
+	
+	csvfile = open('/Users/Jason/rankyourfavs/rankfavs/cianat2012.csv', 'rb')
+	dialect = csv.Sniffer().sniff(csvfile.read(1024))
+	csvfile.seek(0)
+	reader= csv.reader(csvfile,dialect)
+	convert = {}
+	
+	for row in reader:
+		r = row
+		if len(r)>0:
+			t = r[0].strip('\t')
+			if 'noun' in t:
+				r = r
+			elif 'adjective' in t:
+				convert[prevcountry] = t.split('adjective: ')[1]
+			else:
+				prevcountry = t
+	
+	for i in convert:
+		try:
+			t = PersonTag.objects.get(name=convert[i])
+			t.type = "Nationality"
+			t.save()
+		except:
+			print "a"	
+
+
 def getThumbs():
 	people = Person.objects.all()
 	for person in people:
@@ -2537,6 +2953,279 @@ def unescape(text):
         return text # leave as is
     return re.sub("&#?\w+;", fixup, text)
 
+
+#@transaction.commit_manually
+def freeOnesScraper():
+	#url = "http://www.freeones.com/html/a_links/?&profession=t"
+	#url = "http://www.freeones.com/html/index_prof.shtml?country=211&profession=m"
+	#url = "http://www.freeones.com/html/index_prof.shtml?"
+	url = "http://www.freeones.com/html/index_prof.shtml?&country=211"
+	#first_letter_base = "/a_links"
+	
+	#to get paging span class "paging" in div class "contentblockheader"
+	
+	
+	h = httplib2.Http()
+	data = ""
+	headers = {
+		'Accept': 'text/html, */*',
+		'Accept-Language': 'en-us,en;q=0.5',
+		'Connection':	'Keep-Alive',
+	}
+	req = urllib2.Request(url, data, headers)
+	f = urllib2.urlopen(req)
+	htmlSource = f.read()
+	f.close()
+	#print htmlSource
+
+	root = html.fromstring(htmlSource)
+	last_page = 0
+	last_page_check = root.cssselect('span.LastPage')
+	if len(last_page_check) > 0:
+		try:
+			last_page = tostring(last_page_check[0]).split("a href=\"?page_w=")[1]
+			last_page = int(re.split("[A-Za-z&?\"]",last_page)[0])
+		except:
+			last_page = 0
+	if last_page == 0:
+		pages = root.cssselect('span.PageNumber')
+	#print test
+		for p in pages:
+			try:
+				page_num = int(p.text)
+				if page_num > 0 and page_num > last_page:
+					last_page = page_num
+			except:
+				False
+	print "LAST_PAGE = {}".format(last_page)
+	for i in range(1,last_page):
+		url = "http://www.freeones.com/html/index_prof.shtml?&country=211&page_w=" + str(i)
+		
+		h = httplib2.Http()
+		data = ""
+		headers = {
+			'Accept': 'text/html, */*',
+			'Accept-Language': 'en-us,en;q=0.5',
+			'Connection':	'Keep-Alive',
+		}
+		req = urllib2.Request(url, data, headers)
+		f = urllib2.urlopen(req)
+		htmlSource = f.read()
+		f.close()
+		#print htmlSource
+
+		root = html.fromstring(htmlSource)
+		
+		people = root.cssselect('div.babeInfoBlock_thumb')
+
+		for i in people:
+			p = tostring(i)
+			try:
+				name = p.split("<a class=\"name\" href=\"")[1].split("\"")[0].split("_links/")[1].strip("/")
+			except:
+				name = None
+			#print name
+			if name != None:
+				first_letter_base = "/a_links"
+				url = "http://www.freeones.com/html" + first_letter_base + "/bio_" + name + ".php"
+				print url
+				try:
+					temp = TemporaryPerson.objects.get(freeones_link = url)
+				except:
+					try:
+						req = urllib2.Request(url, data, headers)
+						f = urllib2.urlopen(req)
+						htmlSource = f.read()
+						f.close()
+			
+						root = html.fromstring(htmlSource)
+						table = root.cssselect('table#biographyTable')
+						#print table
+						entries = table[0].cssselect("tr")
+						person = {}
+						person['freeones_link'] = url
+						for tr in entries:
+							tds = tr.cssselect("td")
+							fact = re.sub('<[^<]+?>', '', tostring(tds[1])).strip().strip("&#160;")
+							facttype = re.sub('<[^<]+?>', '', tostring(tds[0])).strip().strip("&#160;").strip(":")
+							if facttype == "Babe Name":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['name'] = fact
+							elif facttype == "Profession":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['profession'] = fact
+							elif facttype == "Ethnicity":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['ethnicity'] = fact
+							elif facttype == "Country of Origin":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['nationality'] = fact
+							elif facttype == "Province / State":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['state'] = fact
+							elif facttype == "Place of Birth":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['placeofbirth'] = fact
+							elif facttype == "Date of Birth":
+								#print "type: {} fact {}".format(facttype,fact)
+								if fact == "Unknown":
+									person['dob'] = None
+								else:
+									try:
+										person['dob'] = datetime.strptime(fact.split(" (")[0], "%B %d, %Y")
+									except:
+										person['dob'] = None
+										print "COULDNT PROCESS: {}".format(fact)
+							elif facttype == "Eye Color":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['eye_color'] = fact
+							elif facttype == "Hair Color":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['hair_color'] = fact
+							elif facttype == "Measurements":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['measurements'] = fact
+							elif facttype == "Fake Boobs":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['implants'] = fact
+							elif facttype == "Piercings":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['piercings'] = fact
+							elif facttype == "Tattoos":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['tattoos'] = fact
+							elif facttype == "Social Network Links":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['sociallinks'] = fact
+								lis = tr.cssselect("li")
+								for li in lis:
+									lnk = tostring(li)
+									#print lnk
+									if "twitter" in lnk.lower():
+										person['twitter'] = lnk.split("twitter.com/")[1].split("\"")[0]
+									if "facebook" in lnk.lower():
+										person['facebook'] = lnk.split("facebook.com/")[1].split("\"")[0]
+							elif facttype == "Babe Rank on Freeones":
+								#print "type: {} fact {}".format(facttype,fact)
+								person['freeones_rank'] = fact
+							elif facttype == "Height":
+								try:
+									heightcm = int(fact.split("heightcm = \"")[1].split("\"")[0])
+									person['height'] = int(round(heightcm * .39370))
+								except:
+									print "height problem"
+							elif facttype == "Weight":
+								try:
+									weightkg = int(fact.split("weightkg = \"")[1].split("\"")[0])
+									person['weight'] = int(round(weightkg / .4545))
+								except:
+									print "weight problem"
+					
+							else:
+								True
+								#print facttype
+					except:
+						True
+					if 'dob' not in person:
+						person['dob'] = None
+					if 'nationality' not in person:
+						person['nationality'] = None
+					if 'hair_color' not in person:
+						person['hair_color'] = None
+					if 'eye_color' not in person:
+						person['eye_color'] = None
+					if 'measurements' not in person:
+						person['measurements'] = None
+					if 'tattoos' not in person:
+						person['tattoos'] = False
+					else:
+						person['tattoos'] = True
+					if 'implants' not in person or person['implants'] == "No":
+						person['implants'] = False
+					else:
+						person['implants'] = True
+					if 'piercings' not in person or person['piercings'] == "None":
+						person['piercings'] = False
+					else:
+						person['piercings'] = True
+					if 'twitter' not in person:
+						person['twitter'] = None
+					if 'facebook' not in person:
+						person['facebook'] = None
+					if 'freeones_rank' not in person:
+						person['freeones_rank'] = 100000
+					if person['freeones_rank'] == "" or person['freeones_rank'] == None:
+						person['freeones_rank'] = 100000
+					try:
+						temp_person = TemporaryPerson.objects.get(name=person['name'])
+					except:
+						temp_person = None
+					try:
+						real_person = Person.objects.get(name=person['name'])
+						print "found {} {} {}".format(person['name'],person['dob'],real_person.dob)
+						if datetime.strptime(str(real_person.dob),"%Y-%m-%d") == person['dob']:
+							print "WE FOUND A MATCH"
+							temp_person = "Don't need"
+						else:
+							real_person = None
+					except:
+						real_person = None
+						
+					if real_person != None:
+						real_person.height = person['height']
+						real_person.weight = person['weight']
+						real_person.hair_color = person['hair_color']
+						real_person.eye_color = person['eye_color']
+						real_person.measurements = person['measurements']
+						real_person.implants = person['implants']
+						real_person.piercings = person['piercings']
+						real_person.tattoos = person['tattoos']
+						if real_person.twitter == None and person['twitter'] != None:
+							real_person.twitter = person['twitter']
+						if real_person.facebook == None and person['facebook'] != None:
+							real_person.facebook = person['facebook']
+						try:
+							real_person.save()
+						except:
+							transaction.rollback()
+						else:
+							transaction.commit()
+						print "real person updated"				
+					elif temp_person == None and real_person == None:# and int(person['freeones_rank']) < 5000:
+						temp_person = TemporaryPerson(	name=person['name'],
+														dob=person['dob'],
+														height=person['height'],
+														weight=person['weight'],
+														hair_color = person['hair_color'],
+														eye_color = person['eye_color'],
+														measurements = person['measurements'],
+														implants = person['implants'],
+														piercings = person['piercings'],
+														tattoos = person['tattoos'],
+														nationality = person['nationality'],
+														twitter = person['twitter'],
+														facebook = person['facebook'],
+														freeones_link = person['freeones_link'],
+														freeones_rank = person['freeones_rank'])
+						
+						try:
+							temp_person.save()
+						except:
+							transaction.rollback()
+						else:
+							transaction.commit()
+					
+					#print person
+		
+
+					
+	
+	
+	
+
+	
+	
+	
 
 def chickipediaPage():
 	count = 0

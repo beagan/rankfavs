@@ -1,23 +1,27 @@
 {% include "base.html" %}
 
-<img src ="/static//{{movie.imdb_id}}/1.jpg">
-<li>{{movie.title}}</li>
-<li><a href="http://www.imdb.com/title/tt{{movie.imdb_id}}">iMDb link</a></li>
-{% if movie.netflix_id %}
-<li><a href="http://movies.netflix.com/Movie/{{movie.netflix_id}}">Netflix Link</a></li>
+<img src ="/static//vgame/{{videogame.vid}}/1.jpg">
+<li>{{videogame.title}}</li>
+
+<li><a href="http://www.mobygames.com/game/{{videogame.mobygames_id}}">Mobygames link</a></li>
+{% if videogame.giantbomb_id %}
+<li><a href="http://www.giantbomb.com/id/{{videogame.giantbomb_id}}">Giantbomb Link</a></li>
 {% endif %}
-{% if movie.moviedb_id %}
-<li><a href="http://www.themoviedb.org/movie/{{movie.moviedb_id}}">themoviedb Link</a></li>
+{% if videogame.imdb_id %}
+<li><a href="http://http://www.imdb.com/title/tt{{videogame.imdb_id}}">iMDb Link</a></li>
 {% endif %}
-{% if movie.rottentomatoes_id %}
-<li><a href="http://www.rottentomatoes.com/m/{{movie.rottentomatoes_id}}">Rottentomatoes Link</a></li>
+{% if videogame.steam_id %}
+<li><a href="http://www.steam.com/{{videogame.steam_id}}">Steam Link</a></li>
+{% endif %}
+{% if videogame.wikipedia_link %}
+<li><a href="http://en.wikipedia.org/wiki/{{videogame.wikipedia_link}}">Wikipedia Link</a></li>
 {% endif %}
 
-<li>{{movie.year}}</li>
+<li>{{videogame.year}}</li>
 
-<li>{{moviemat.wins}}</li>
-<li>{{moviemat.losses}}</li>
-<li>{{moviemat.elorating}}</li>
+<li>{{videogamemat.wins}}</li>
+<li>{{videogamemat.losses}}</li>
+<li>{{videogamemat.elorating}}</li>
 <div class="span5">
 <table class="table table-striped">
 	<thead><td>Winners</td><td>Losers</td></thead>
@@ -43,7 +47,7 @@
 					lid = $(this).find('lid').attr('id');
 					wid = $(this).find('wid').attr('id');
 					elo = $(this).find('elo').attr('id');
-	               	$.post('/reversemovievote', { 
+	               	$.post('/reversevideogamevote', { 
 		                'csrfmiddlewaretoken': '{{ csrf_token }}',
 		                'winner': wid,
 						'loser': lid, 

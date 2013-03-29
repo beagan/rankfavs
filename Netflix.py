@@ -13,10 +13,10 @@ from xml.dom.minidom import parseString
 import simplejson
 from urlparse import urlparse
 
-HOST              = 'api.netflix.com'
+HOST              = 'api-public.netflix.com.com'
 PORT              = '80'
-REQUEST_TOKEN_URL = 'http://api.netflix.com/oauth/request_token'
-ACCESS_TOKEN_URL  = 'http://api.netflix.com/oauth/access_token'
+REQUEST_TOKEN_URL = 'http://api-public.netflix.com/oauth/request_token'
+ACCESS_TOKEN_URL  = 'http://api-public.netflix.com/oauth/access_token'
 AUTHORIZATION_URL = 'https://api-user.netflix.com/oauth/login'
 
 		
@@ -37,7 +37,7 @@ class NetflixCatalog():
         self.client = client
     
     def searchTitles(self, term,startIndex=None,maxResults=None):
-        requestUrl = '/catalog/titles'
+        requestUrl = '/catalog/titles/dvd'
         parameters = {'term': term}
         if startIndex:
             parameters['start_index'] = startIndex

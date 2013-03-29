@@ -156,7 +156,7 @@ max-width:450px;
 
 {% if top20 %}
 	{% for i in top20 %}
-		<li>{{forloop.counter}}. <img src="/static//vgame/thumb/{{i.vid.vid}}.jpg"/><a href ="videogame/?id={{i.vid.vid}}">{{i.vid.title}}</a>{{i.elorating}}  {{i.rank}}</li>
+		<li>{{forloop.counter}}. <img src="/static//vgame/thumb/{{i.vid.vid}}.jpg"/><a href ="videogame/?vid={{i.vid.vid}}">{{i.vid.title}}</a>{{i.elorating}}  {{i.rank}}</li>
 	{% endfor %}
 {% endif %}
 </div>
