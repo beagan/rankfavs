@@ -583,13 +583,19 @@ def GetReplacementPicsHandler(request):
 	print params
 	if 'pid' in params:
 		pid = params['pid']
-	person = Person.objects.get(pid=pid)
+		person = Person.objects.get(pid=pid)
+	if 'mid' in params:
+		mid = params['mid']
+		movie = Movie.objects.get(mid=mid)
 	#send pid over to getter, store in person/(pid)/tmp/1.2.3.4
 	#send to browser count of tmp pics, pid, pic, num images for person
 	if 'query' in params:
 		query = params['query']
 	else:
-		query = person.name
+		if 'pid' in params:
+			query = person.name
+		else:
+			query = None
 	if 'newpics' in params:
 		picinfo = Posters.getPersonPictureReplacements(query,person.pid)
 		
@@ -597,15 +603,24 @@ def GetReplacementPicsHandler(request):
 		context['newpics'] = num_new_pics
 		context['picinfo'] = picinfo
 		context['tmppics'] = range(1,num_new_pics+1)
+	
+	if 'pid' in params:
+		context['person'] = person
 		
-	context['person'] = person
-		
-	context['range'] = range(1,person.images+1)
+		context['range'] = range(1,person.images+1)
 	
 	
-	message = render_to_response('personreplacepics.html',context,context_instance=RequestContext(request))
-	return HttpResponse(message)
-
+		message = render_to_response('personreplacepics.html',context,context_instance=RequestContext(request))
+		return HttpResponse(message)
+	elif 'mid' in params:
+		context['movie'] = movie
+		
+		context['range'] = range(1,movie.images+1)
+		
+		message = render_to_response('moviereplacepics.html',context,context_instance=RequestContext(request))
+		return HttpResponse(message)
+	else:
+		return HttpResponse("ERROR")
 
 def PickThumbnailHandler(request):
 	context = {}

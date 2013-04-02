@@ -1,6 +1,6 @@
 {% include "base.html" %}
 
-<img src ="/static//{{movie.imdb_id}}/1.jpg">
+<a href="/editpics?mid={{movie.mid}}"><img src ="/static//{{movie.imdb_id}}/1.jpg">
 <li>{{movie.title}}</li>
 <li><a href="http://www.imdb.com/title/tt{{movie.imdb_id}}">iMDb link</a></li>
 {% if movie.netflix_id %}

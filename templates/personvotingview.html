@@ -141,7 +141,7 @@ max-width:450px;
 </div>
 
 
-<li><a href ="person/?pid={{person1.pid}}">{{person1.name}}</a></li> 
+<li><a href ="{% url person person1.pid %}">{{person1.name}}</a></li> 
 <li>{{person1mat.elorating}}</li>
 <li>{{person1mat.numratings}}</li>
 <li>{{person1mat.neveruse}}</li>
@@ -155,7 +155,7 @@ max-width:450px;
 	<wid id="{{person2.pid}}" type="hidden" name="person2id"><br>
 	<lid id="{{person1.pid}}" type="hidden" name="person1id"/><br>
 </div>	
-<li><a href ="person/?pid={{person2.pid}}">{{person2.name}}</a></li> 
+<li><a href ="{% url person person2.pid %}">{{person2.name}}</a></li> 
 <li>{{person2mat.elorating}}</li>
 <li>{{person2mat.numratings}}</li>
 <li>{{person2mat.neveruse}}</li>
@@ -201,7 +201,7 @@ max-width:450px;
 
 {% if top20 %}
 	{% for i in top20 %}
-		<li>{{forloop.counter}}. <img src="/static//person/thumb/{{i.pid.pid}}.jpg"/><a href ="person/?pid={{i.pid.pid}}">{{i.pid.name}}</a>{{i.elorating}}  {{i.rank}}</li>
+		<li>{{forloop.counter}}. <img src="/static//person/thumb/{{i.pid.pid}}.jpg"/><a href ="{% url person i.pid.pid %}">{{i.pid.name}}</a>{{i.elorating}}  {{i.rank}}</li>
 	{% endfor %}
 {% endif %}
 </div>

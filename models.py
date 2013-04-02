@@ -3,9 +3,10 @@ from django.contrib.auth.models import User
 from datetime import datetime
 from taggit_autocomplete.managers import TaggableManager
 from taggit.models import TaggedItemBase, TagBase, GenericTaggedItemBase
-
+from django.core.urlresolvers import reverse
 from south.modelsinspector import add_ignored_fields
 add_ignored_fields(["^taggit_autocomplete\.managers"])
+import sys
 
 class UserProfile(models.Model):
     # This field is required.
@@ -248,6 +249,15 @@ class Person(models.Model):
 	images = models.IntegerField(null = True, blank = True)
 	def __unicode__(self):
 		return self.name
+	
+	#@permalink
+	def get_absolute_url(self):
+		try:
+			return reverse('person',args=(self.pid,))
+		except:
+			print "Unexpected error:", sys.exc_info()[0]
+
+	
 	
 
 

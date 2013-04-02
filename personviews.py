@@ -6,7 +6,6 @@ from django.db import connection
 import random
 import math
 import operator
-import Calculate
 from django.http import HttpResponse,HttpResponseRedirect
 from django.db.models import Q
 from django.db.models import Avg
@@ -23,6 +22,8 @@ from django import forms
 from django.forms import ModelForm, Textarea
 from django.contrib.auth.decorators import login_required
 from taggit.models import Tag
+
+from Calculate import calculateRating
 
 class PersonForm(ModelForm):
 	def clean(self):
@@ -922,13 +923,13 @@ def getCloseOnePerson(fperson, fscore, rematch, person1,person1mat,userprof):
 	return {'person':person2,'matchup':person2mat}
 
 
-def PersonHandler(request):
+def PersonHandler(request, pid):
 	params= request.GET
 	
 	if 'pid' in params:
 		pid = params["pid"]
 	else:
-		pid = 0
+		pid = pid
 	userprofile = request.user.get_profile()
 	try:
 		p = Person.objects.get(pid = pid)
@@ -1109,10 +1110,7 @@ def CalculateRating(type,winner,loser,u):
 			except:
 				losersc = UserPersonScore(uid =u, pid = loser, elorating = 1000,numratings =0,wins=0,losses=0)
 				losersc.save()
-			
-			
-			
-			
+					
 			fwinner = {}
 			floser = {}
 			fwinner['elorating__gt'] = winnersc.elorating
@@ -1125,7 +1123,7 @@ def CalculateRating(type,winner,loser,u):
 			matchup = PersonMatchup.objects.filter((Q(winner=winner) & Q(loser=loser)) | (Q(loser=winner) & Q(winner=loser)),uid = u)
 			if not (matchup.exists()):
 								
-				calc = Calculate.calculateRating(winnersc.elorating, losersc.elorating, winnersc.numratings, losersc.numratings)
+				calc = calculateRating(winnersc.elorating, losersc.elorating, winnersc.numratings, losersc.numratings)
 				
 				winnersc.numratings = winnersc.numratings + 1
 				
@@ -1145,7 +1143,6 @@ def CalculateRating(type,winner,loser,u):
 			else:
 				m = matchup[0]
 				#print m.elo
-				#print "THIS IS A REMAMMTMMTMMT"
 				#roll back previous
 				if (m.winner == winnersc.pid):
 					winnersc.elorating = winnersc.elorating-m.w_elo
@@ -1160,7 +1157,7 @@ def CalculateRating(type,winner,loser,u):
 					losersc.losses = losersc.losses + 1
 				
 				
-				calc = Calculate.calculateRating(winnersc.elorating, losersc.elorating, winnersc.numratings, losersc.numratings)
+				calc = calculateRating(winnersc.elorating, losersc.elorating, winnersc.numratings, losersc.numratings)
 								
 				winnersc.elorating = winnersc.elorating + calc['winner_change']
 				

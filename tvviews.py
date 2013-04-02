@@ -11,6 +11,8 @@ from django.db.models import Q
 from django.shortcuts import redirect
 import Posters
 
+from Calculate import calculateRating
+
 def TVShowHandler(request):
 	params= request.GET
 	
@@ -73,7 +75,6 @@ def TVShowMatchHandler(request):
 		notwatched = params['notwatched']
 		setNotWatched(notwatched,userprofile)
 		print "set not watched"
-
 	if 'clearfilters' in params:
 		request.session['gametype'] = None
 		request.session['list'] = None
@@ -96,7 +97,6 @@ def TVShowMatchHandler(request):
 	#Checking to see if we are setting the gametype
 	#If there is a gametype set in filter dictionary for the view
 		#########NEED TO CHANGE IN HTML
-
 	if 'gametype' in params:
 		request.session['gametype'] = params['gametype']
 		if request.session.get('gametype') ==  'winner':
@@ -105,8 +105,6 @@ def TVShowMatchHandler(request):
 			request.session['filtdict']['gametype'] = 'Loser Stays'
 		else:
 			request.session['filtdict']['gametype'] = 'Matchup Type'
-
-
 		
 	
 	
@@ -137,7 +135,6 @@ def TVShowMatchHandler(request):
 		
 	if 'list' in params:
 		request.session['list'] = params['list']
-
 	if request.session.get('list') == 'top25':
 		request.session['filtdict']['list'] = "Your Top 25"
 		topftvshow={}
@@ -499,7 +496,6 @@ def getTwoTVshows(ftvshow, fscore, userprof):
 								tvshows['1mat'] = tvshow1mat
 								tvshows['2'] = tvshow2
 								tvshows['2mat'] = tvshow2mat
-
 								#TEMPORARY
 								tvshows['count'] = count
 								
