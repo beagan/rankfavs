@@ -118,7 +118,7 @@ max-width:450px;
 {% if movie1 %}
 <div id="movie" class="span3">
 	<img class="poster" src ="/static//{{movie1.imdb_id}}/{{movie1ran}}.jpg">
-	<li><a href ="movie/?mid={{movie1.mid}}">{{movie1.title}}</a></li> 
+	<li><a href ="{% url "movie" movie1.mid %}">{{movie1.title}}</a></li> 
 	<li>{{movie1mat.elorating}}</li>
 	<li>{{movie1mat.numratings}}</li>
 	<wid id="{{movie1.mid}}" type="hidden" name="movie1id"/><br>
@@ -127,7 +127,7 @@ max-width:450px;
 </div>
 <div id="movie" class = "span3">
 	<img class="poster" src ="/static//{{movie2.imdb_id}}/{{movie2ran}}.jpg">
-	<li><a href ="movie/?mid={{movie2.mid}}">{{movie2.title}}</a></li> 
+	<li><a href ="{% url "movie" movie2.mid %}">{{movie2.title}}</a></li> 
 	<li>{{movie2mat.elorating}}</li>
 	<li>{{movie2mat.numratings}}</li>
 	<wid id="{{movie2.mid}}" type="hidden" name="movie2id"><br>
@@ -177,7 +177,7 @@ NO MOVIES
 
 {% if top20 %}
 	{% for i in top20 %}
-		<li>{{forloop.counter}}<a href ="movie/?mid={{i.mid.mid}}">{{i.mid.title}}</a></li>
+		<li>{{forloop.counter}}<a href ="{% url "movie" i.mid.mid %}">{{i.mid.title}}</a></li>
 	{% endfor %}
 {% endif %}
 </div>

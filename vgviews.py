@@ -10,11 +10,13 @@ from django.db.models import Q
 from django.shortcuts import redirect
 import Posters
 
-def VideoGameHandler(request):
+def VideoGameHandler(request,vid):
 	params= request.GET
 	
 	if 'vid' in params:
 		vid = params["vid"]
+	else:
+		vid = vid
 		
 	userprofile = request.user.get_profile()
 	

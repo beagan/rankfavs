@@ -13,13 +13,13 @@ import Posters
 
 from Calculate import calculateRating
 
-def TVShowHandler(request):
+def TVShowHandler(request, tid):
 	params= request.GET
 	
 	if 'tid' in params:
 		tid = int(params["tid"])
 	else:
-		tid = 0
+		tid = tid
 	userprofile = request.user.get_profile()
 	try:
 		t = TVshow.objects.get(tid = tid)

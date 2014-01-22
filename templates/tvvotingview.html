@@ -121,7 +121,7 @@ max-width:450px;
 	<wid id="{{tvshow1.tid}}" type="hidden" name="tvshow1id"/><br>
 	<lid id="{{tvshow2.tid}}" type="hidden" name="tvshow2id"/><br>
 </div>
-<li><a href ="tvshow/?tid={{tvshow1.tid}}">{{tvshow1.title}}</a></li> 
+<li><a href ="{% url tvshow tvshow1.tid %}">{{tvshow1.title}}</a></li> 
 <li>{{tvshow1mat.elorating}}</li>
 <li>{{tvshow1mat.numratings}}</li>
 <li>{{tvshow1mat.watched}}</li>
@@ -134,7 +134,7 @@ max-width:450px;
 	<wid id="{{tvshow2.tid}}" type="hidden" name="tvshow2id"><br>
 	<lid id="{{tvshow1.tid}}" type="hidden" name="tvshow1id"/><br>
 </div>	
-<li><a href ="tvshow/?tid={{tvshow2.tid}}">{{tvshow2.title}}</a></li> 
+<li><a href ="{% url tvshow tvshow2.tid %}">{{tvshow2.title}}</a></li> 
 <li>{{tvshow2mat.elorating}}</li>
 <li>{{tvshow2mat.numratings}}</li>
 <li>{{tvshow2mat.watched}}</li>
@@ -179,7 +179,7 @@ max-width:450px;
 
 {% if top20 %}
 	{% for i in top20 %}
-		<li>{{forloop.counter}}. <img src="/static//tvshow/thumb/{{i.tid.tid}}.jpg"/><a href ="tvshow/?id={{i.tid.tid}}">{{i.tid.title}}</a>{{i.elorating}}  {{i.rank}}</li>
+		<li>{{forloop.counter}}. <img src="/static//tvshow/thumb/{{i.tid.tid}}.jpg"/><a href ="{% url tvshow i.tid.tid %}">{{i.tid.title}}</a>{{i.elorating}}  {{i.rank}}</li>
 	{% endfor %}
 {% endif %}
 </div>

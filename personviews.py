@@ -423,7 +423,8 @@ def PersonEditHandler(request):
 		if form.is_valid():
 			person = form.save()
 			person.save()
-			return HttpResponseRedirect('/person?pid=' + str(person.pid))
+			url = reverse('person',args=(person.pid,))
+			return redirect(url)
 		else:
 			print form.is_valid()
 			return HttpResponse()

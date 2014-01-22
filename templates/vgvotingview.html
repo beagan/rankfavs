@@ -98,7 +98,7 @@ max-width:450px;
 	<wid id="{{videogame1.vid}}" type="hidden" name="videogame1id"/><br>
 	<lid id="{{videogame2.vid}}" type="hidden" name="videogame2id"/><br>
 </div>
-<li><a href ="videogame/?id={{videogame1.vid}}">{{videogame1.title}}</a></li> 
+<li><a href ="{% url videogame videogame1.vid %}">{{videogame1.title}}</a></li> 
 <li>{{videogame1mat.elorating}}</li>
 <li>{{videogame1mat.numratings}}</li>
 <li>{{videogame1mat.neveruse}}</li>
@@ -111,7 +111,7 @@ max-width:450px;
 	<wid id="{{videogame2.vid}}" type="hidden" name="videogame2id"><br>
 	<lid id="{{videogame1.vid}}" type="hidden" name="videogame1id"/><br>
 </div>	
-<li><a href ="videogame/?id={{videogame2.vid}}">{{videogame2.title}}</a></li> 
+<li><a href ="{% url videogame videogame2.vid %}">{{videogame2.title}}</a></li> 
 <li>{{videogame2mat.elorating}}</li>
 <li>{{videogame2mat.numratings}}</li>
 <li>{{videogame2mat.neveruse}}</li>
@@ -156,7 +156,7 @@ max-width:450px;
 
 {% if top20 %}
 	{% for i in top20 %}
-		<li>{{forloop.counter}}. <img src="/static//vgame/thumb/{{i.vid.vid}}.jpg"/><a href ="videogame/?vid={{i.vid.vid}}">{{i.vid.title}}</a>{{i.elorating}}  {{i.rank}}</li>
+		<li>{{forloop.counter}}. <img src="/static//vgame/thumb/{{i.vid.vid}}.jpg"/><a href ="{% url videogame i.vid.vid %}">{{i.vid.title}}</a>{{i.elorating}}  {{i.rank}}</li>
 	{% endfor %}
 {% endif %}
 </div>

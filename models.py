@@ -94,6 +94,11 @@ class Movie(models.Model):
 
 	def __unicode__(self):
 		return self.title
+	def get_absolute_url(self):
+		try:
+			return reverse('movie',args=(self.mid,))
+		except:
+			print "Unexpected error:", sys.exc_info()[0]
 
 
 
@@ -142,6 +147,12 @@ class VideoGame(models.Model):
 	wikipedia_link = models.CharField(max_length=256,null = True,blank = True,unique=True)
 	
 	images = models.IntegerField(default=0)
+	
+	def get_absolute_url(self):
+		try:
+			return reverse('videogame',args=(self.vid,))
+		except:
+			print "Unexpected error:", sys.exc_info()[0]
 	
 
 
@@ -211,9 +222,9 @@ class Person(models.Model):
 	gender = models.CharField(max_length=10,blank=True)
 	height = models.IntegerField(null = True, blank = True)
 	weight = models.IntegerField(null = True, blank = True)
-	hair_color = models.CharField(max_length=32,blank=True)
-	eye_color = models.CharField(max_length=32,blank=True)
-	measurements = models.CharField(max_length=32,blank=True)
+	hair_color = models.CharField(max_length=32,null = True,blank=True)
+	eye_color = models.CharField(max_length=32,null = True,blank=True)
+	measurements = models.CharField(max_length=32,null = True,blank=True)
 	implants = models.BooleanField(default=False)
 	piercings = models.BooleanField(default=False)
 	tattoos = models.BooleanField(default=False)
@@ -342,6 +353,12 @@ class TVshow(models.Model):
 	title = models.CharField(max_length=128)
 	first_aired = models.DateField(null=True,blank =True,default="1900-1-1")
 	images = models.IntegerField(null = True, blank = True)	
+	def get_absolute_url(self):
+		try:
+			return reverse('tvshow',args=(self.tid,))
+		except:
+			print "Unexpected error:", sys.exc_info()[0]
+
 
 
 class TVShowMatchup(models.Model):

@@ -5,14 +5,14 @@
 {% include "base.html" %}
 <form action="/swappics/" method="post">{% csrf_token %}
 <input type=hidden name="new" id="new" value="{{newpics}}"/>
-<input type=hidden name="old" id ="old" value="{{movie.images}}"/>
-<input type=hidden name="pid" id ="pid" value="{{movie.mid}}"/>
+<input type=hidden name="oldcount" id ="old" value="{{movie.images}}"/>
+<input type=hidden name="mid" id ="pid" value="{{movie.mid}}"/>
 <div>
 <ul class="thumbnails">
 <table><tr>
 {% for i in range %}
 <td>
-<input type="checkbox" name="old{{i}}" id="old{{i}}" />
+<input type="checkbox" name="old" id="old{{i}}" value="{{i}}"/>
 <label for="old{{i}}" onclick="document.getElemenstById.old{{i}}.checked = true;"><img src="/static//{{movie.imdb_id}}/{{i}}.jpg" alt="" width="180"/></label>
 </td>
 
@@ -24,7 +24,7 @@
 {% for i,j in picinfo.items %}
 
 
-<td><input type="checkbox" name="new{{i}}" onclick="document.getElemenstById.new{{i}}.checked = true;" id="{{j.link}}" /><img src ="/static//{{movie.mid}}/tmp/{{i}}.jpg" title="{{j.title}}"></a>
+<td><input type="checkbox" name="new" id ="new{{i}}" value="{{i}}" onclick="document.getElemenstById.new{{i}}.checked = true;" id="{{j.link}}" /><img src ="/static//{{movie.mid}}/tmp/{{i}}.jpg" title="{{j.title}}"></a>
 <li>{{j.domain}}</li>
 <li>{{j.width}}x{{j.height}}</li>
 </td>

@@ -5,7 +5,7 @@
 	{% for i in results %}
 		<tr>
 		<td><img src="/static//person/thumb/{{i.pid}}.jpg"/></td>
-		<td><a href ="person/?pid={{i.pid}}">{{i.name}}</a></td>
+		<td><a href ="{% url person i.pid %}">{{i.name}}</a></td>
 		<td class="btn" id="reverse">
 			<a id="{{i.pid}}" type="hidden"/>
 			Make Thumb
@@ -17,7 +17,7 @@
 	{% for i in sresults %}
 		<tr>
 		<td><img src="/static//person/thumb/{{i.pid.pid}}.jpg"/></td>
-		<td><a href ="person/?pid={{i.pid.pid}}">{{i.pid.name}}</a></td>
+		<td><a href ="{% url person i.pid.pid %}">{{i.pid.name}}</a></td>
 		<td>{{i.elorating}}</td>
 		<td class="btn" id="reverse">
 			<a id="{{i.pid}}" type="hidden"/>
@@ -30,7 +30,7 @@
 	{% for i in taglist %}
 		<tr>
 		<td><img src="/static//person/thumb/{{i.pid.pid}}.jpg"/></td>
-		<td><a href ="person/?pid={{i.pid.pid}}">{{i.pid.name}}</a></td>
+		<td><a href ="{% url person i.pid.pid %}">{{i.pid.name}}</a></td>
 		<td>{{i}}</td>
 		<td class="btn" id="reverse">
 			<a id="{{i.pid}}" type="hidden"/>

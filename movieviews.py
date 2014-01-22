@@ -362,11 +362,13 @@ def CalculateRating(type,winner,loser,u):
 		ranks['loserchange'] = oldloserrank - newloserrank
 		return ranks
 
-def MovieHandler(request):
+def MovieHandler(request,mid):
 	params= request.GET
 	
 	if 'mid' in params:
 		mid = params["mid"]
+	else:
+		mid = mid
 		
 	userprofile = request.user.get_profile()
 	

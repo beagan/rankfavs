@@ -14,7 +14,7 @@ from django.utils import simplejson
 from django.db.models import Q, Max, Sum, Avg
 from django.db import transaction, connection, IntegrityError
 from django.shortcuts import redirect
-
+from django.core.urlresolvers import reverse
 from django.utils import simplejson
 from django.utils.encoding import smart_str, smart_unicode
 from endless_pagination.decorators import page_template, page_templates
@@ -39,6 +39,7 @@ import sys
 import freebase
 import movieviews
 import MovieUtilities
+import httplib
 from imdb import IMDb
 import re
 
@@ -155,7 +156,7 @@ def HomeHandler(request,template="index.html",extra_context=None):
 	params= request.GET	
 #	today = date.today()
 	context = {}
-	#freeOnesScraper()
+	# freeOnesScraper()
 	#TVUtlities.getPosters()
  	#netflix(60025061)
 	#netflix(60000523)
@@ -577,6 +578,38 @@ def ProfileHandler(request):
 	return HttpResponse(message)
 
 
+def ListHandler(request,username,type="none",page="1"):
+	u = User.objects.get(username=username)
+	
+	context = {}
+	context['user'] = u
+	
+	u = u.get_profile()
+	
+	page = int(page)
+	boundaries = [(page-1)*50,page*50]
+	context['start'] = boundaries[0]
+	
+	if type == "none" or type == 'movie':
+		context['obj_list_movie'] = UserMovieScore.objects.filter(uid=u).order_by('elorating').reverse()[boundaries[0]:boundaries[1]]
+	if type == 'people':
+		context['obj_list_people'] = UserPersonScore.objects.filter(uid=u).order_by('elorating').reverse()[boundaries[0]:boundaries[1]]
+	if type == 'tvshow':
+		context['obj_list_tvshow'] = UserTVShowScore.objects.filter(uid=u).order_by('elorating').reverse()[boundaries[0]:boundaries[1]]
+	if type == 'videogame':
+		context['obj_list_videogame'] = UserVideoGameScore.objects.filter(uid=u).order_by('elorating').reverse()[boundaries[0]:boundaries[1]]
+	
+	
+	template = "list.html"
+	
+	message = render_to_response(template, context,
+		context_instance=RequestContext(request))
+	return HttpResponse(message)
+
+
+	
+
+#JUST WORKS FOR PERSON now works for movie but not new just old
 def GetReplacementPicsHandler(request):
 	context = {}
 	params= request.GET
@@ -622,6 +655,8 @@ def GetReplacementPicsHandler(request):
 	else:
 		return HttpResponse("ERROR")
 
+
+#JUST WORKS FOR PERSON
 def PickThumbnailHandler(request):
 	context = {}
 	params= request.GET
@@ -652,7 +687,8 @@ def PickThumbnailReturnHandler(request):
 			os.rename(dir+"1.jpg",dir+str(pic_id)+".jpg")
 			os.rename(dir+"tmp.jpg",dir+"1.jpg")
 		
-	url = '/person?pid=' + str(pid)
+	#url = '/person/' + str(pid)
+	url = reverse('person',args=(pid,))
 	return redirect(url)
 
 
@@ -666,39 +702,53 @@ def ProcessNewPicsHandler(request):
 	elif request.method == 'POST':
 		params = request.POST
 		print params
-		new = 0
-		if params['new'] != '':
-			new = int(params['new'])
+		#new = 0
+		#if params['new'] != '':
+		#	new = int(params['new'])
 		
-		old = int(params['old'])
-		pid = int(params['pid'])
+		old = int(params['oldcount'])
+		if 'pid' in params:
+			pid = int(params['pid'])
+			type = "Person"
+		if 'mid' in params:
+			mid = int(params['mid'])
+			imdb_id = Movie.objects.get(mid=mid).imdb_id
+			type = "Movie"
 		oldchecks = 0
 		newchecks = 0
 		newindex = []
 		oldindex = []
-		for i in range(1,new+1):
-			check = "new" + str(i)
-			if check in params:
-				print check
-				newchecks +=1
-				newindex.append(i)
-		for i in range(1,old+1):
-			check = "old" + str(i)
-			if check in params:
-				print check
-				oldchecks += 1
-				oldindex.append(i)
-		dir = "/Users/Jason/person/" + str(pid) + "/"
-		if new > 0:
-			big_links = pickle.load( open( "/Users/Jason/person/" + str(pid) + '/tmp/links.lnk', "rb" ))
+		oldchecked = [ x for x in request.POST.getlist('old') if x is not u'' ]
+		newchecked = [ x for x in request.POST.getlist('new') if x is not u'' ]
+		oldchecks = len(oldchecked)
+		newchecks = len(newchecked)
+		print "old checked {}".format(oldchecked)
+		print "new checked {}".format(newchecked)		
+		
+		if type == "Person":
+			dir = "/Users/Jason/person/" + str(pid) + "/"
+		##FIX
+		else:
+			if type == "Movie":
+				dir = "/Users/Jason/movie2/" + str(imdb_id) + "/"
+			else:
+				dir = None
+		print newchecks
+		if newchecks > 0:
+			if type == "Person":
+				big_links = pickle.load( open( "/Users/Jason/person/" + str(pid) + '/tmp/links.lnk', "rb" ))
+			else:
+				big_links = None
 		##remove all old, go thru and rename old 1....oldimages index, 
 			##put new in place right after, reset stored images 
 		##new more than old, remove old, replace with a new in place,
 			##put rest of new in place after
 		q = Queue()
-		for i in oldindex:
+		for i in oldchecked:
+			print "remvoing {}{}{}".format(dir, str(i), ".jpg")
 			if (os.path.isfile(dir+str(i)+".jpg")):
 				os.remove(dir+str(i)+".jpg")
+				print "remove {}{}".format(dir,str(i))
 		for i in range(1,old+1):
 			if not (os.path.isfile(dir+str(i)+".jpg")):
 				q.put(i)
@@ -706,11 +756,11 @@ def ProcessNewPicsHandler(request):
 				os.rename(dir+str(i)+".jpg",dir+str(q.get())+".jpg")
 				q.put(i)
 		last = 0
-		for i in range(1,old+new+1):
+		for i in range(1,old+newchecks+1):
 			if os.path.isfile(dir+str(i)+".jpg"):
 				last=i
 		last+=1
-		for j in newindex:
+		for j in newchecked:
 			if not (os.path.isfile(dir+str(i)+".jpg")):
 				####dl pic
 				print j
@@ -728,7 +778,7 @@ def ProcessNewPicsHandler(request):
 					if not hasattr(e, "code"):
 						print "WHOOPS"
 					resp = e
-				except urllib2.HTTPException,e:
+				except httplib.HTTPException,e:
 					print "whoops"
 				else:
 					contenttype = resp.headers["content-type"]
@@ -747,22 +797,33 @@ def ProcessNewPicsHandler(request):
 							im.save(dir+str(last)+".jpg", "JPEG")
 						last+=1
 		last = 0
-		for i in range(1,old+new+1):
+		for i in range(1,old+newchecks+1):
 			if os.path.isfile(dir+str(i)+".jpg"):
 				last=i
-			
-		p = Person.objects.get(pid=pid)
-		p.images=last
-		p.image_edit = True
-		p.save()
-		dir = "/Users/Jason/person/" + str(pid) + "/tmp/"
-		if 	os.path.exists(dir):
-			shutil.rmtree(dir)
+		if type == "Person":	
+			p = Person.objects.get(pid=pid)
+			p.images=last
+			p.image_edit = True
+			p.save()
+			dir = "/Users/Jason/person/" + str(pid) + "/tmp/"
+			if 	os.path.exists(dir):
+				shutil.rmtree(dir)
+		if type == "Movie":
+			m = Movie.objects.get(mid=mid)
+			m.images=last
+			#m.image_edit = True
+			m.save()
+			dir = "/Users/Jason/movie/" + str(imdb_id) + "/tmp/"
+			if 	os.path.exists(dir):
+				shutil.rmtree(dir)
 	
 #	message = render_to_response('person.html',context,context_instance=RequestContext(request))
 ###CHANGING DURING MASS EDIT
-	
-	url = '/person?pid=' + str(p.pid)
+	if type == "Person":
+	#url = '/person?pid=' + str(p.pid)
+		url = reverse('person',args=(p.pid,))
+	if type == "Movie":
+		url = reverse('movie',args=(m.mid,))
 #	p = Person.objects.filter(image_edit=False).order_by('?')[0]
 #	url = '/editpics?pid=' + str(p.pid)
 	
@@ -2976,10 +3037,7 @@ def freeOnesScraper():
 	#url = "http://www.freeones.com/html/index_prof.shtml?"
 	url = "http://www.freeones.com/html/index_prof.shtml?&country=211"
 	#first_letter_base = "/a_links"
-	
 	#to get paging span class "paging" in div class "contentblockheader"
-	
-	
 	h = httplib2.Http()
 	data = ""
 	headers = {
@@ -2992,7 +3050,6 @@ def freeOnesScraper():
 	htmlSource = f.read()
 	f.close()
 	#print htmlSource
-
 	root = html.fromstring(htmlSource)
 	last_page = 0
 	last_page_check = root.cssselect('span.LastPage')
@@ -3028,11 +3085,9 @@ def freeOnesScraper():
 		htmlSource = f.read()
 		f.close()
 		#print htmlSource
-
 		root = html.fromstring(htmlSource)
 		
 		people = root.cssselect('div.babeInfoBlock_thumb')
-
 		for i in people:
 			p = tostring(i)
 			try:
@@ -3195,6 +3250,8 @@ def freeOnesScraper():
 						real_person.implants = person['implants']
 						real_person.piercings = person['piercings']
 						real_person.tattoos = person['tattoos']
+						real_person.freeones_rank = person['freeones_rank']
+						real_person.freeones_link = person['freeones_link']
 						if real_person.twitter == None and person['twitter'] != None:
 							real_person.twitter = person['twitter']
 						if real_person.facebook == None and person['facebook'] != None:
@@ -3231,15 +3288,8 @@ def freeOnesScraper():
 							transaction.commit()
 					
 					#print person
-		
+						
 
-					
-	
-	
-	
-
-	
-	
 	
 
 def chickipediaPage():

@@ -1,0 +1,48 @@
+{% include "base.html" %}
+{% load stattools %}
+
+
+<a href="{% url lists user.username 'movie' %}">Movie</a><a href="{% url lists user.username 'people' %}">People</a><a href="{% url lists user.username 'tvshow' %}">TV Show</a><a href="{% url lists user.username 'videogame' %}">Videogame</a>
+
+
+<table>
+	{% if obj_list_movie %}
+		{% for i in obj_list_movie %}
+			<li>{{ forloop.counter|add:start }}<a href ="{% url movie i.mid.mid %}">{{i.mid.title}}</a></li>
+		{% endfor %}
+	{% endif %}
+	{% if obj_list_people %}
+		{% for i in obj_list_people %}
+			<li>{{ forloop.counter|add:start }}<a href ="{% url person i.pid.pid %}">{{i.pid.name}}</a></li>
+		{% endfor %}
+	{% endif %}
+	{% if obj_list_tvshow %}
+		{% for i in obj_list_tvshow %}
+			<li>{{ forloop.counter|add:start }}<a href ="{% url tvshow i.tid.tid %}">{{i.tid.title}}</a></li>
+		{% endfor %}
+	{% endif %}
+	{% if obj_list_videogame %}
+		{% for i in obj_list_videogame %}
+			<li>{{ forloop.counter|add:start }}<a href ="{% url videogame i.vid.vid %}">{{i.vid.title}}</a></li>
+		{% endfor %}
+	{% endif %}
+</table>
+
+
+<script>
+
+	    $("#watched").live('click', function(){
+	
+					mid = $(this).find('mid').attr('id');
+	               	$.post('/moviewatched', { 
+		                'csrfmiddlewaretoken': '{{ csrf_token }}',
+		                'movie': mid,},
+						function(data) {
+							replace = "Watched"
+							$('#seen' + mid).replaceWith(replace)
+						
+   					     }, "json");
+
+	            });
+
+</script>

@@ -4,6 +4,8 @@
 .DS_Store
 /migrations
 /static
+/bin
+/lib
 file
 
 ciaadmin2012.csv

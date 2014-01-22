@@ -37,7 +37,6 @@ def makeTVThumb(id):
 			thumb.save("/Users/Jason/tvshow/thumb/" + str(id)+".jpg","JPEG",optimize=True)
 
 
-
 #def getIMDBInfo(id):
 	#http://app.imdb.com/title/maindetails?tconst=tt0137523
 
